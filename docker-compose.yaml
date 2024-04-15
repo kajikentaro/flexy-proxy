@@ -1,0 +1,12 @@
+version: "3.4"
+
+services:
+  dev_go:
+    container_name: go_proxy
+    working_dir: /work
+    image: golang:1.21.4-bullseye
+    tty: true
+    volumes:
+      - type: bind
+        source: .
+        target: /work
