@@ -1,7 +1,9 @@
-configs:
+routes:
   - url: "https://sample.jp/"
     content: "matched"
   - url: "https://sample.co.jp/foo/bar/"
     file: "sample2.txt"
   - url: "https://sample.com"
     file: "sample1.html"
+default_route:
+  proxy_url: "http://localhost:8082"

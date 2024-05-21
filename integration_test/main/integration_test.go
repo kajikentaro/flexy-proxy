@@ -42,7 +42,7 @@ func TestRequestOnConfigUrl(t *testing.T) {
 	err = yaml.Unmarshal(fileContent, &config)
 	assert.NoError(t, err)
 
-	for _, c := range config.Configs {
+	for _, c := range config.Routes {
 		proxyUrl, err := url.Parse(PROXY_URL)
 		assert.NoError(t, err)
 		res, err := utils.Request(proxyUrl, c.Url)
