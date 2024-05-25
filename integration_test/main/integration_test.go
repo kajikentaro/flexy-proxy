@@ -3,9 +3,10 @@ package integration_test
 import (
 	"fmt"
 	"go-proxy"
-	utils "go-proxy/integration_test"
+	test_utils "go-proxy/integration_test"
 	"go-proxy/models"
 	default_proxy "go-proxy/to_be_remove"
+	"go-proxy/utils"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,12 +23,18 @@ var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
 var PROXY_URL = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER)
 
 func TestMain(m *testing.M) {
-	p := proxy.GetProxy()
+	config, err := utils.ParseConfig("")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	p := proxy.GetProxy(config)
 	srv := &http.Server{Addr: PROXY_HTTP_ADDRESS, Handler: p}
-	go utils.StartServer(srv)
+	go test_utils.StartServer(srv)
 	// wait for starting the server
 	time.Sleep(time.Second)
-	defer utils.StopServer(srv)
+	defer test_utils.StopServer(srv)
 	m.Run()
 }
 
@@ -45,7 +52,7 @@ func TestRequestOnConfigUrl(t *testing.T) {
 	for _, c := range config.Routes {
 		proxyUrl, err := url.Parse(PROXY_URL)
 		assert.NoError(t, err)
-		res, err := utils.Request(proxyUrl, c.Url)
+		res, err := test_utils.Request(proxyUrl, c.Url)
 		assert.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
@@ -75,14 +82,14 @@ func TestRequestOnOtherUrl(t *testing.T) {
 	// 2nd proxy which is used if a request url does not match urls on config file
 	p := default_proxy.GetProxy()
 	srv := &http.Server{Addr: ":8082", Handler: p}
-	go utils.StartServer(srv)
+	go test_utils.StartServer(srv)
 	// wait for starting the server
 	time.Sleep(time.Second)
-	defer utils.StopServer(srv)
+	defer test_utils.StopServer(srv)
 
 	proxyUrl, err := url.Parse(PROXY_URL)
 	assert.NoError(t, err)
-	res, err := utils.Request(proxyUrl, "https://default-proxy.jp/")
+	res, err := test_utils.Request(proxyUrl, "https://default-proxy.jp/")
 	assert.NoError(t, err)
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)

@@ -2,6 +2,8 @@ package proxy
 
 import (
 	"fmt"
+	"go-proxy/models"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -30,13 +32,26 @@ func getResponseString(req *http.Request, ctx *goproxy.ProxyCtx) (bool, string) 
 	return false, ""
 }
 
-func GetProxy() *goproxy.ProxyHttpServer {
+func GetProxy(config *models.ProxyConfig) *goproxy.ProxyHttpServer {
 	proxy := goproxy.NewProxyHttpServer()
-	// proxy.Verbose = true
+	proxy.Verbose = true
 
-	proxy.OnRequest(goproxy.ReqHostIs("sample.jp:443")).HandleConnect(goproxy.AlwaysMitm)
-	proxy.OnRequest(goproxy.ReqHostIs("sample.co.jp:443")).HandleConnect(goproxy.AlwaysMitm)
-	proxy.OnRequest(goproxy.ReqHostIs("sample.com:443")).HandleConnect(goproxy.AlwaysMitm)
+	for _, route := range config.Routes {
+		routeUrl, err := url.Parse(route.Url)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if routeUrl.Scheme == "https" {
+			reqHost := fmt.Sprintf("%s:443", routeUrl.Host)
+			proxy.OnRequest(goproxy.ReqHostIs(reqHost)).HandleConnect(goproxy.AlwaysMitm)
+			continue
+		}
+		if routeUrl.Scheme == "http" {
+			// TODO
+			continue
+		}
+		log.Fatalf("scheme of '%s' must be either 'http' or 'https'", route.Url)
+	}
 
 	proxy.OnRequest().DoFunc(
 		func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
