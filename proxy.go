@@ -66,10 +66,9 @@ func GetProxy(config *models.ProxyConfig) *goproxy.ProxyHttpServer {
 		},
 	)
 
-	proxy.Tr = &http.Transport{Proxy: func(req *http.Request) (*url.URL, error) {
-		return url.Parse("http://localhost:8082")
-	}}
-	proxy.ConnectDial = proxy.NewConnectDialToProxy("http://localhost:8082")
+	if config.DefaultRoute.ProxyUrl != "" {
+		proxy.ConnectDial = proxy.NewConnectDialToProxy(config.DefaultRoute.ProxyUrl)
+	}
 
 	return proxy
 }
