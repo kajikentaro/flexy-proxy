@@ -8,9 +8,11 @@ import (
 	default_proxy "go-proxy/to_be_remove"
 	"go-proxy/utils"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -58,17 +60,28 @@ func TestRequestOnConfigUrl(t *testing.T) {
 			defer res.Body.Close()
 			body, err := io.ReadAll(res.Body)
 
+			expectedContentType := "text/plain"
+			if c.File != "" {
+				expectedContentType = mime.TypeByExtension(filepath.Ext(c.File))
+			}
+			if c.ContentType != "" {
+				expectedContentType = c.ContentType
+			}
+			assert.Equal(t, expectedContentType, res.Header.Get("Content-Type"))
+
+			expectedStatusCode := 200
+			if c.Status != 0 {
+				expectedStatusCode = c.Status
+			}
+			assert.Equal(t, expectedStatusCode, res.StatusCode)
+
 			if c.Content != "" {
 				assert.NoError(t, err)
 				assert.Equal(t, c.Content, string(body))
-				// TODO read expected headers from config file
-				assert.Equal(t, res.Header.Get("Content-Type"), "text/html;charset=utf-8")
 			} else if c.File != "" {
 				b, err := os.ReadFile(c.File)
 				assert.NoError(t, err)
 				assert.Equal(t, b, body)
-				// TODO read expected headers from config file
-				assert.Equal(t, res.Header.Get("Content-Type"), "text/html;charset=utf-8")
 			} else {
 				t.Error("invalid config format")
 			}
