@@ -49,32 +49,30 @@ func TestRequestOnConfigUrl(t *testing.T) {
 	err = yaml.Unmarshal(fileContent, &config)
 	assert.NoError(t, err)
 
-	for _, c := range config.Routes {
-		proxyUrl, err := url.Parse(PROXY_URL)
-		assert.NoError(t, err)
-		res, err := test_utils.Request(proxyUrl, c.Url)
-		assert.NoError(t, err)
-		defer res.Body.Close()
-		body, err := io.ReadAll(res.Body)
-
-		if c.Content != "" {
+	for idx, c := range config.Routes {
+		t.Run(fmt.Sprintf("index: %d, route: %s", idx, c.Url), func(t *testing.T) {
+			proxyUrl, err := url.Parse(PROXY_URL)
 			assert.NoError(t, err)
-			assert.Equal(t, c.Content, string(body))
-			// TODO read expected headers from config file
-			assert.Equal(t, res.Header.Get("Content-Type"), "text/html;charset=utf-8")
-			continue
-		}
-
-		if c.File != "" {
-			b, err := os.ReadFile(c.File)
+			res, err := test_utils.Request(proxyUrl, c.Url)
 			assert.NoError(t, err)
-			assert.Equal(t, b, body)
-			// TODO read expected headers from config file
-			assert.Equal(t, res.Header.Get("Content-Type"), "text/html;charset=utf-8")
-			continue
-		}
+			defer res.Body.Close()
+			body, err := io.ReadAll(res.Body)
 
-		t.Error("invalid config format")
+			if c.Content != "" {
+				assert.NoError(t, err)
+				assert.Equal(t, c.Content, string(body))
+				// TODO read expected headers from config file
+				assert.Equal(t, res.Header.Get("Content-Type"), "text/html;charset=utf-8")
+			} else if c.File != "" {
+				b, err := os.ReadFile(c.File)
+				assert.NoError(t, err)
+				assert.Equal(t, b, body)
+				// TODO read expected headers from config file
+				assert.Equal(t, res.Header.Get("Content-Type"), "text/html;charset=utf-8")
+			} else {
+				t.Error("invalid config format")
+			}
+		})
 	}
 }
 
