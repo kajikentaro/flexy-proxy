@@ -10,5 +10,9 @@ routes:
   - url: "https://sample.com"
     file: "sample1.html"
     content_type: "text/custom"
+  - url: "http://http.content.com"
+    content: "http,content"
+  - url: "http://http.file.com"
+    file: "sample2.txt"
 default_route:
   proxy_url: "http://localhost:8082"

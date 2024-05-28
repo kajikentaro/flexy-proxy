@@ -128,7 +128,6 @@ func (p *ProxySeed) getProxyHttpServer() (*goproxy.ProxyHttpServer, error) {
 			continue
 		}
 		if routeUrl.Scheme == "http" {
-			// TODO
 			continue
 		}
 		return nil, fmt.Errorf("scheme of '%s' must be either 'http' or 'https'", route.Url)
