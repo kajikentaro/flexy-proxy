@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"go-proxy"
+	"go-proxy/loggers"
 	"go-proxy/utils"
 	"log"
 	"net/http"
@@ -19,6 +20,9 @@ func main() {
 		log.Fatalf("Error parsing config: %v", err)
 	}
 
-	p := proxy.GetProxy(config)
-	log.Fatal(http.ListenAndServe(":9999", p))
+	proxy, err := proxy.SetupProxy(config, loggers.GenLogger())
+	if err != nil {
+		log.Fatalln("failed to init proxy", err)
+	}
+	log.Fatal(http.ListenAndServe(":9999", proxy))
 }

@@ -2,8 +2,8 @@ package proxy
 
 import (
 	"fmt"
+	"go-proxy/loggers"
 	"go-proxy/models"
-	"log"
 	"net/http"
 	"net/url"
 
@@ -31,9 +31,9 @@ func isUrlSame(a *url.URL, b *url.URL) bool {
 	return true
 }
 
-func handleProxyRuntimeError(req *http.Request, title string, message string) (*http.Request, *http.Response) {
+func (p *ProxySeed) handleProxyRuntimeError(req *http.Request, title string, message string) (*http.Request, *http.Response) {
 	logContent := fmt.Sprintf("proxy runtime error: %s: %s", title, message)
-	log.Println(logContent)
+	p.logger.Error(logContent)
 	res := goproxy.NewResponse(
 		req,
 		goproxy.ContentTypeText,
@@ -43,7 +43,7 @@ func handleProxyRuntimeError(req *http.Request, title string, message string) (*
 	return req, res
 }
 
-func serveContent(req *http.Request, userStatusCode int, userContentType string, content string) (*http.Request, *http.Response) {
+func (*ProxySeed) serveContent(req *http.Request, userStatusCode int, userContentType string, content string) (*http.Request, *http.Response) {
 	contentType := goproxy.ContentTypeText
 	if userContentType != "" {
 		contentType = userContentType
@@ -57,7 +57,7 @@ func serveContent(req *http.Request, userStatusCode int, userContentType string,
 	return req, res
 }
 
-func serveFile(req *http.Request, userStatusCode int, userContentType string, fileName string) (*http.Request, *http.Response) {
+func (*ProxySeed) serveFile(req *http.Request, userStatusCode int, userContentType string, fileName string) (*http.Request, *http.Response) {
 	fileRes := NewFileResponse(req)
 	res := fileRes.res
 	http.ServeFile(fileRes, req, fileName)
@@ -73,16 +73,54 @@ func serveFile(req *http.Request, userStatusCode int, userContentType string, fi
 	return req, res
 }
 
-func GetProxy(config *models.ProxyConfig) *goproxy.ProxyHttpServer {
+func (p *ProxySeed) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+	for _, route := range p.config.Routes {
+		routeUrl, _ := url.Parse(route.Url)
+		if !isUrlSame(routeUrl, req.URL) {
+			// unmatched
+			continue
+		}
+		// matched
+
+		if route.File != "" {
+			// TODO use std out
+			p.logger.Info("routed to the file", "request URL", req.URL.String(), "file", route.File)
+			return p.serveFile(req, route.Status, route.ContentType, route.File)
+		}
+
+		if route.Content != "" {
+			p.logger.Info("routed to the content", "request URL", req.URL.String(), "content", route.Content)
+			return p.serveContent(req, route.Status, route.ContentType, route.Content)
+		}
+
+		return p.handleProxyRuntimeError(req, "File or Content are not specified", "")
+	}
+	return req, nil
+}
+
+type ProxySeed struct {
+	config *models.ProxyConfig
+	logger *loggers.Logger
+}
+
+func SetupProxy(config *models.ProxyConfig, logger *loggers.Logger) (*goproxy.ProxyHttpServer, error) {
 	// TODO: validate config file
 	// i.e.: do not contain both content and file
+	ps := &ProxySeed{
+		config: config,
+		logger: logger,
+	}
+	return ps.getProxyHttpServer()
+}
+
+func (p *ProxySeed) getProxyHttpServer() (*goproxy.ProxyHttpServer, error) {
 	proxy := goproxy.NewProxyHttpServer()
 	// proxy.Verbose = true
 
-	for _, route := range config.Routes {
+	for _, route := range p.config.Routes {
 		routeUrl, err := url.Parse(route.Url)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		if routeUrl.Scheme == "https" {
 			reqHost := fmt.Sprintf("%s:443", routeUrl.Host)
@@ -93,39 +131,14 @@ func GetProxy(config *models.ProxyConfig) *goproxy.ProxyHttpServer {
 			// TODO
 			continue
 		}
-		log.Fatalf("scheme of '%s' must be either 'http' or 'https'", route.Url)
+		return nil, fmt.Errorf("scheme of '%s' must be either 'http' or 'https'", route.Url)
 	}
 
-	proxy.OnRequest().DoFunc(
-		func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-			for _, route := range config.Routes {
-				routeUrl, _ := url.Parse(route.Url)
-				if !isUrlSame(routeUrl, req.URL) {
-					// unmatched
-					continue
-				}
-				// matched
+	proxy.OnRequest().DoFunc(p.onRequest)
 
-				if route.File != "" {
-					// TODO use std out
-					log.Printf("'%s' was routed to the file: '%s'", req.URL.String(), route.File)
-					return serveFile(req, route.Status, route.ContentType, route.File)
-				}
-
-				if route.Content != "" {
-					log.Printf("'%s' was routed to the content: '%s'", req.URL.String(), route.Content)
-					return serveContent(req, route.Status, route.ContentType, route.Content)
-				}
-
-				return handleProxyRuntimeError(req, "File or Content are not specified", "")
-			}
-			return req, nil
-		},
-	)
-
-	if config.DefaultRoute.ProxyUrl != "" {
-		proxy.ConnectDial = proxy.NewConnectDialToProxy(config.DefaultRoute.ProxyUrl)
+	if p.config.DefaultRoute.ProxyUrl != "" {
+		proxy.ConnectDial = proxy.NewConnectDialToProxy(p.config.DefaultRoute.ProxyUrl)
 	}
 
-	return proxy
+	return proxy, nil
 }

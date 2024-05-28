@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-proxy"
 	test_utils "go-proxy/integration_test"
+	"go-proxy/loggers"
 	"go-proxy/models"
 	default_proxy "go-proxy/to_be_remove"
 	"go-proxy/utils"
@@ -31,8 +32,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	p := proxy.GetProxy(config)
-	srv := &http.Server{Addr: PROXY_HTTP_ADDRESS, Handler: p}
+	proxy, err := proxy.SetupProxy(config, loggers.GenLogger())
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	srv := &http.Server{Addr: PROXY_HTTP_ADDRESS, Handler: proxy}
 	go test_utils.StartServer(srv)
 	// wait for starting the server
 	time.Sleep(time.Second)
