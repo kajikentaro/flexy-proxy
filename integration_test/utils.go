@@ -13,6 +13,40 @@ import (
 	"time"
 )
 
+func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Logger) error {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "text/plain")
+		fmt.Fprintf(w, "hello world")
+	})
+
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
+
+	// wait for ending the previous server
+	time.Sleep(100 * time.Millisecond)
+	go func() {
+		err := StartServer(srv)
+		if err != nil {
+			logger.Error("failed to start a server", err)
+		}
+	}()
+	go func() {
+		<-ctx.Done()
+		err := StopServer(srv)
+		if err != nil {
+			logger.Error("failed to shutdown the server", err)
+		}
+	}()
+
+	// wait for starting the server
+	time.Sleep(100 * time.Millisecond)
+
+	return nil
+}
+
 func StartProxyServer(ctx context.Context, proxyAddr string, config *models.ProxyConfig, logger *loggers.Logger) error {
 	proxy, err := proxy.SetupProxy(config, loggers.GenLogger())
 	if err != nil {

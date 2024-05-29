@@ -23,6 +23,10 @@ func (f *FileResponse) WriteHeader(statusCode int) {
 	f.res.StatusCode = statusCode
 }
 
+// usage:
+// fileRes := NewFileResponse(req)
+// fileRes implements `http.ResponseWriter`
+// fileRes.res implements `*http.Response`
 func NewFileResponse(req *http.Request) *FileResponse {
 	var body bytes.Buffer
 	return &FileResponse{

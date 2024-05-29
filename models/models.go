@@ -4,6 +4,7 @@ type ProxyConfig struct {
 	Routes []struct {
 		Url      string
 		Response struct {
+			Url     string
 			Content string
 			File    string
 

@@ -20,5 +20,10 @@ routes:
   - url: "http://http.file.com"
     response:
       file: "sample2.txt"
-default_route:
-  proxy_url: "http://localhost:8082"
+
+  - url: "http://url.test"
+    response:
+      url: "http://localhost:8082"
+  - url: "https://https.url.test"
+    response:
+      url: "http://localhost:8082"

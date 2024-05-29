@@ -5,6 +5,7 @@ import (
 	"go-proxy/loggers"
 	"go-proxy/models"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 
 	_ "embed"
@@ -57,10 +58,33 @@ func (*ProxySeed) serveContent(req *http.Request, userStatusCode int, userConten
 	return req, res
 }
 
+func (*ProxySeed) serveUrl(req *http.Request, userStatusCode int, userContentType string, url *url.URL) (*http.Request, *http.Response) {
+	// fetch response as a reverse proxy
+	fileRes := NewFileResponse(req)
+	proxy := httputil.NewSingleHostReverseProxy(url)
+	proxy.ServeHTTP(fileRes, req)
+
+	// overwrite response according to the input
+	if userContentType != "" {
+		// if contentType is specified, overwrite it
+		fileRes.res.Header["Content-Type"][0] = userContentType
+	}
+	statusCode := 200
+	if userStatusCode != 0 {
+		statusCode = userStatusCode
+	}
+	fileRes.res.StatusCode = statusCode
+
+	return req, fileRes.res
+}
+
 func (*ProxySeed) serveFile(req *http.Request, userStatusCode int, userContentType string, fileName string) (*http.Request, *http.Response) {
+	// return file as a response
 	fileRes := NewFileResponse(req)
 	res := fileRes.res
 	http.ServeFile(fileRes, req, fileName)
+
+	// overwrite response according to the input
 	if userContentType != "" {
 		// if contentType is specified, overwrite it
 		res.Header["Content-Type"][0] = userContentType
@@ -82,6 +106,15 @@ func (p *ProxySeed) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.R
 		}
 		// matched
 
+		if route.Response.Url != "" {
+			p.logger.Info("'%s' was routed to the URL: '%s'", req.URL.String(), route.Response.Url)
+			url, err := url.Parse(route.Response.Url)
+			if err != nil {
+				return p.handleProxyRuntimeError(req, "Failed to parse URL:", route.Response.Url)
+			}
+			return p.serveUrl(req, route.Response.Status, route.Response.ContentType, url)
+		}
+
 		if route.Response.File != "" {
 			// TODO use std out
 			p.logger.Info("routed to the file", "request URL", req.URL.String(), "file", route.Response.File)
@@ -93,7 +126,7 @@ func (p *ProxySeed) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.R
 			return p.serveContent(req, route.Response.Status, route.Response.ContentType, route.Response.Content)
 		}
 
-		return p.handleProxyRuntimeError(req, "File or Content are not specified", "")
+		return p.handleProxyRuntimeError(req, "None of File, Content, or Url is not specified", "")
 	}
 	return req, nil
 }
