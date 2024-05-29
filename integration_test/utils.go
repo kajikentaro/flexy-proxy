@@ -5,28 +5,60 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"go-proxy"
+	"go-proxy/loggers"
+	"go-proxy/models"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 )
 
-func StartServer(srv *http.Server) {
-	err := srv.ListenAndServe()
-	if !errors.Is(err, http.ErrServerClosed) {
-		fmt.Fprintf(os.Stderr, "failed to start server: %s", err)
-		os.Exit(1)
+func StartProxyServer(ctx context.Context, proxyAddr string, config *models.ProxyConfig, logger *loggers.Logger) error {
+	proxy, err := proxy.SetupProxy(config, loggers.GenLogger())
+	if err != nil {
+		return err
 	}
+
+	srv := &http.Server{Addr: proxyAddr, Handler: proxy}
+
+	// wait for ending the previous server
+	time.Sleep(100 * time.Millisecond)
+	go func() {
+		err := StartServer(srv)
+		if err != nil {
+			logger.Error("failed to start a server", err)
+		}
+	}()
+	go func() {
+		<-ctx.Done()
+		err := StopServer(srv)
+		if err != nil {
+			logger.Error("failed to shutdown the server", err)
+		}
+	}()
+
+	// wait for starting the server
+	time.Sleep(100 * time.Millisecond)
+
+	return nil
 }
 
-func StopServer(srv *http.Server) {
+func StartServer(srv *http.Server) error {
+	err := srv.ListenAndServe()
+	if !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
+}
+
+func StopServer(srv *http.Server) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	err := srv.Shutdown(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to shutdown server")
-		os.Exit(1)
+		return err
 	}
+	return nil
 }
 
 func Request(proxyUrl *url.URL, targetUrl string) (*http.Response, error) {
