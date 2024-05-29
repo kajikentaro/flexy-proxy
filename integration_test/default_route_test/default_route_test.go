@@ -5,38 +5,43 @@ import (
 	"fmt"
 	test_utils "go-proxy/integration_test"
 	"go-proxy/loggers"
-	default_proxy "go-proxy/to_be_remove"
 	"go-proxy/utils"
 	"io"
-	"net/http"
 	"net/url"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-var PROXY_PORT_NUMBER = 8083
-var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
-var PROXY_URL = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER)
+var PROXY_PORT_NUMBER_1 = 8083
+var PROXY_HTTP_ADDRESS_1 = fmt.Sprintf(":%d", PROXY_PORT_NUMBER_1)
+var PROXY_URL_1 = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER_1)
+
+var PROXY_PORT_NUMBER_2 = 8084
+var PROXY_HTTP_ADDRESS_2 = fmt.Sprintf(":%d", PROXY_PORT_NUMBER_2)
 
 func TestRequestOnOtherUrl(t *testing.T) {
-	config, err := utils.ParseConfig("default_route_test.yaml")
-	assert.NoError(t, err)
+	// setup 1st proxy
+	{
+		config, err := utils.ParseConfig("1st_proxy.yaml")
+		assert.NoError(t, err)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config, loggers.GenLogger())
-	defer cancel()
+		ctx, cancel := context.WithCancel(context.Background())
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config, loggers.GenLogger())
+		defer cancel()
+	}
 
-	// 2nd proxy which is used if a request url does not match urls on config file
-	p := default_proxy.GetProxy()
-	srv := &http.Server{Addr: ":8082", Handler: p}
-	go test_utils.StartServer(srv)
-	// wait for starting the server
-	time.Sleep(time.Second)
-	defer test_utils.StopServer(srv)
+	// setup 2nd proxy which is used if a request url does not match urls on config file
+	{
+		config, err := utils.ParseConfig("2nd_proxy.yaml")
+		assert.NoError(t, err)
 
-	proxyUrl, err := url.Parse(PROXY_URL)
+		ctx, cancel := context.WithCancel(context.Background())
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config, loggers.GenLogger())
+		defer cancel()
+	}
+
+	proxyUrl, err := url.Parse(PROXY_URL_1)
 	assert.NoError(t, err)
 	res, err := test_utils.Request(proxyUrl, "https://default-proxy.jp/")
 	assert.NoError(t, err)

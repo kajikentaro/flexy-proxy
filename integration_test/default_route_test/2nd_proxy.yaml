@@ -1,0 +1,4 @@
+routes:
+  - url: "https://default-proxy.jp/"
+    response:
+      content: "1,2,3"
