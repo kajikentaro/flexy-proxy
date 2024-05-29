@@ -112,30 +112,35 @@ func (p *ProxySeed) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.R
 			continue
 		}
 		// matched
-
-		if route.Response.Url != "" {
-			p.logger.Info("'%s' was routed to the URL: '%s'", req.URL.String(), route.Response.Url)
-			url, err := url.ParseRequestURI(route.Response.Url)
-			if err != nil {
-				return p.handleProxyRuntimeError(req, "Failed to parse URL:", route.Response.Url)
-			}
-			return p.serveUrl(req, route.Response.Status, route.Response.ContentType, url)
-		}
-
-		if route.Response.File != "" {
-			// TODO use std out
-			p.logger.Info("routed to the file", "request URL", req.URL.String(), "file", route.Response.File)
-			return p.serveFile(req, route.Response.Status, route.Response.ContentType, route.Response.File)
-		}
-
-		if route.Response.Content != "" {
-			p.logger.Info("routed to the content", "request URL", req.URL.String(), "content", route.Response.Content)
-			return p.serveContent(req, route.Response.Status, route.Response.ContentType, route.Response.Content)
-		}
-
-		return p.handleProxyRuntimeError(req, "None of File, Content, or Url is not specified", "")
+		req, res := p.overwrite(req, ctx, route)
+		res.Header.Add("Elastic-Proxy", fmt.Sprintf("matched URL: %s", routeUrl))
+		return req, res
 	}
 	return req, nil
+}
+
+func (p *ProxySeed) overwrite(req *http.Request, ctx *goproxy.ProxyCtx, route models.ProxyRoute) (*http.Request, *http.Response) {
+	if route.Response.Url != "" {
+		p.logger.Info("routed to the URL", "request URL", req.URL.String(), "forward URL", route.Response.Url)
+		url, err := url.ParseRequestURI(route.Response.Url)
+		if err != nil {
+			return p.handleProxyRuntimeError(req, "Failed to parse URL:", route.Response.Url)
+		}
+		return p.serveUrl(req, route.Response.Status, route.Response.ContentType, url)
+	}
+
+	if route.Response.File != "" {
+		// TODO use std out
+		p.logger.Info("routed to the file", "request URL", req.URL.String(), "file", route.Response.File)
+		return p.serveFile(req, route.Response.Status, route.Response.ContentType, route.Response.File)
+	}
+
+	if route.Response.Content != "" {
+		p.logger.Info("routed to the content", "request URL", req.URL.String(), "content", route.Response.Content)
+		return p.serveContent(req, route.Response.Status, route.Response.ContentType, route.Response.Content)
+	}
+
+	return p.handleProxyRuntimeError(req, "None of File, Content, or Url is not specified", "")
 }
 
 type ProxySeed struct {
