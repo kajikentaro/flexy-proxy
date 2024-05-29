@@ -82,15 +82,15 @@ func (p *ProxySeed) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.R
 		}
 		// matched
 
-		if route.File != "" {
+		if route.Response.File != "" {
 			// TODO use std out
-			p.logger.Info("routed to the file", "request URL", req.URL.String(), "file", route.File)
-			return p.serveFile(req, route.Status, route.ContentType, route.File)
+			p.logger.Info("routed to the file", "request URL", req.URL.String(), "file", route.Response.File)
+			return p.serveFile(req, route.Response.Status, route.Response.ContentType, route.Response.File)
 		}
 
-		if route.Content != "" {
-			p.logger.Info("routed to the content", "request URL", req.URL.String(), "content", route.Content)
-			return p.serveContent(req, route.Status, route.ContentType, route.Content)
+		if route.Response.Content != "" {
+			p.logger.Info("routed to the content", "request URL", req.URL.String(), "content", route.Response.Content)
+			return p.serveContent(req, route.Response.Status, route.Response.ContentType, route.Response.Content)
 		}
 
 		return p.handleProxyRuntimeError(req, "File or Content are not specified", "")

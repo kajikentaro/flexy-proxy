@@ -1,18 +1,24 @@
 routes:
   - url: "https://sample.jp/?foo=bar#12"
-    content: "matched"
-    content_type: "text/custom"
-    status: 201
+    response:
+      content: "matched"
+      content_type: "text/custom"
+      status: 201
   - url: "https://sample.jp/"
-    content: "matched"
+    response:
+      content: "matched"
   - url: "https://sample.co.jp/foo/bar/"
-    file: "sample2.txt"
+    response:
+      file: "sample2.txt"
   - url: "https://sample.com"
-    file: "sample1.html"
-    content_type: "text/custom"
+    response:
+      file: "sample1.html"
+      content_type: "text/custom"
   - url: "http://http.content.com"
-    content: "http,content"
+    response:
+      content: "http,content"
   - url: "http://http.file.com"
-    file: "sample2.txt"
+    response:
+      file: "sample2.txt"
 default_route:
   proxy_url: "http://localhost:8082"
