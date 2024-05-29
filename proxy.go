@@ -20,13 +20,18 @@ func isUrlSame(a *url.URL, b *url.URL) bool {
 	if a.Hostname() != b.Hostname() {
 		return false
 	}
-	if a.RawPath != b.RawPath {
+	pathA := a.EscapedPath()
+	if pathA == "" {
+		pathA = "/"
+	}
+	pathB := b.EscapedPath()
+	if pathB == "" {
+		pathB = "/"
+	}
+	if pathA != pathB {
 		return false
 	}
 	if a.RawQuery != b.RawQuery {
-		return false
-	}
-	if a.RawFragment != b.RawFragment {
 		return false
 	}
 	return true
@@ -61,7 +66,11 @@ func (*ProxySeed) serveContent(req *http.Request, userStatusCode int, userConten
 func (*ProxySeed) serveUrl(req *http.Request, userStatusCode int, userContentType string, url *url.URL) (*http.Request, *http.Response) {
 	// fetch response as a reverse proxy
 	fileRes := NewFileResponse(req)
-	proxy := httputil.NewSingleHostReverseProxy(url)
+	proxy := &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL = url
+		},
+	}
 	proxy.ServeHTTP(fileRes, req)
 
 	// overwrite response according to the input
@@ -69,11 +78,9 @@ func (*ProxySeed) serveUrl(req *http.Request, userStatusCode int, userContentTyp
 		// if contentType is specified, overwrite it
 		fileRes.res.Header["Content-Type"][0] = userContentType
 	}
-	statusCode := 200
 	if userStatusCode != 0 {
-		statusCode = userStatusCode
+		fileRes.res.StatusCode = userStatusCode
 	}
-	fileRes.res.StatusCode = statusCode
 
 	return req, fileRes.res
 }
@@ -108,7 +115,7 @@ func (p *ProxySeed) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.R
 
 		if route.Response.Url != "" {
 			p.logger.Info("'%s' was routed to the URL: '%s'", req.URL.String(), route.Response.Url)
-			url, err := url.Parse(route.Response.Url)
+			url, err := url.ParseRequestURI(route.Response.Url)
 			if err != nil {
 				return p.handleProxyRuntimeError(req, "Failed to parse URL:", route.Response.Url)
 			}
@@ -152,7 +159,7 @@ func (p *ProxySeed) getProxyHttpServer() (*goproxy.ProxyHttpServer, error) {
 	// proxy.Verbose = true
 
 	for _, route := range p.config.Routes {
-		routeUrl, err := url.Parse(route.Url)
+		routeUrl, err := url.ParseRequestURI(route.Url)
 		if err != nil {
 			return nil, err
 		}

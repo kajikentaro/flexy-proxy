@@ -102,6 +102,5 @@ func Request(proxyUrl *url.URL, targetUrl string) (*http.Response, error) {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
-	fmt.Println(targetUrl)
 	return client.Get(targetUrl)
 }
