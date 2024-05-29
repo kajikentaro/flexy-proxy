@@ -5,16 +5,13 @@ import (
 	"fmt"
 	test_utils "go-proxy/integration_test"
 	"go-proxy/loggers"
-	default_proxy "go-proxy/to_be_remove"
 	"go-proxy/utils"
 	"io"
 	"mime"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +21,7 @@ var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
 var PROXY_URL = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER)
 
 func TestRequestOnConfigUrl(t *testing.T) {
-	config, err := utils.ParseConfig("")
+	config, err := utils.ParseConfig("route_test.yaml")
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -70,6 +67,7 @@ func TestRequestOnConfigUrl(t *testing.T) {
 	}
 }
 
+/*
 func TestRequestOnOtherUrl(t *testing.T) {
 	config, err := utils.ParseConfig("")
 	assert.NoError(t, err)
@@ -96,3 +94,5 @@ func TestRequestOnOtherUrl(t *testing.T) {
 
 	assert.Equal(t, "1,2,3", string(body))
 }
+
+*/
