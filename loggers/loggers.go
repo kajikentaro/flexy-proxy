@@ -1,8 +1,16 @@
 package loggers
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
+)
+
+const (
+	ERROR = iota + 1
+	WARN
+	INFO
+	DEBUG
 )
 
 type logInterface interface {
@@ -13,27 +21,62 @@ type logInterface interface {
 }
 
 type Logger struct {
-	log logInterface
+	log   logInterface
+	level int
 }
 
-func GenLogger() *Logger {
+type LoggerSettings struct {
+	LogLevel int
+}
+
+func StrToLogLevel(strLogLevel string) (int, error) {
+	switch strLogLevel {
+	case "INFO", "info":
+		return INFO, nil
+	case "DEBUG", "debug":
+		return DEBUG, nil
+	case "ERROR", "error":
+		return ERROR, nil
+	case "WARNING", "warning":
+		return WARN, nil
+	default:
+		return 0, fmt.Errorf("unknown log level: %s", strLogLevel)
+	}
+}
+
+func GenLogger(settings *LoggerSettings) *Logger {
+	s := &LoggerSettings{
+		LogLevel: INFO,
+	}
+	if settings != nil {
+		s = settings
+	}
 	return &Logger{
-		log: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		log:   slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		level: s.LogLevel,
 	}
 }
 
 func (l Logger) Info(msg string, args ...any) {
-	l.log.Info(msg, args...)
+	if INFO <= l.level {
+		l.log.Info(msg, args...)
+	}
 }
 
 func (l Logger) Debug(msg string, args ...any) {
-	l.log.Debug(msg, args...)
+	if DEBUG <= l.level {
+		l.log.Debug(msg, args...)
+	}
 }
 
 func (l Logger) Error(msg string, args ...any) {
-	l.log.Error(msg, args...)
+	if ERROR <= l.level {
+		l.log.Error(msg, args...)
+	}
 }
 
 func (l Logger) Warn(msg string, args ...any) {
-	l.log.Warn(msg, args...)
+	if WARN <= l.level {
+		l.log.Warn(msg, args...)
+	}
 }

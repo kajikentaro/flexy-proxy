@@ -48,7 +48,7 @@ func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Log
 }
 
 func StartProxyServer(ctx context.Context, proxyAddr string, config *models.ProxyConfig, logger *loggers.Logger) error {
-	proxy, err := proxy.SetupProxy(config, loggers.GenLogger())
+	proxy, err := proxy.SetupProxy(config, loggers.GenLogger(nil))
 	if err != nil {
 		return err
 	}

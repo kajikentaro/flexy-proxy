@@ -20,7 +20,19 @@ func main() {
 		log.Fatalf("Error parsing config: %v", err)
 	}
 
-	proxy, err := proxy.SetupProxy(config, loggers.GenLogger())
+	logLevelStr := "INFO"
+	if config.LogLevel != "" {
+		logLevelStr = config.LogLevel
+	}
+	logLevel, err := loggers.StrToLogLevel(logLevelStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	logger := loggers.GenLogger(&loggers.LoggerSettings{
+		LogLevel: logLevel,
+	})
+
+	proxy, err := proxy.SetupProxy(config, logger)
 	if err != nil {
 		log.Fatalln("failed to init proxy", err)
 	}

@@ -27,7 +27,7 @@ func TestRequestOnOtherUrl(t *testing.T) {
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config, loggers.GenLogger())
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config, loggers.GenLogger(nil))
 		defer cancel()
 	}
 
@@ -37,7 +37,7 @@ func TestRequestOnOtherUrl(t *testing.T) {
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config, loggers.GenLogger())
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config, loggers.GenLogger(nil))
 		defer cancel()
 	}
 

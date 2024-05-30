@@ -10,7 +10,7 @@ type loggerForProxy struct {
 }
 
 func (l *loggerForProxy) Printf(format string, v ...interface{}) {
-	l.log.Info(fmt.Sprintf(format, v...))
+	l.log.Debug(fmt.Sprintf(format, v...))
 }
 
 func GenLoggerForProxy(log *loggers.Logger) *loggerForProxy {

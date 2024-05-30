@@ -5,6 +5,7 @@ type ProxyConfig struct {
 	DefaultRoute struct {
 		ProxyUrl string `yaml:"proxy_url"`
 	} `yaml:"default_route"`
+	LogLevel string `yaml:"log_level"`
 }
 
 type ProxyRoute struct {

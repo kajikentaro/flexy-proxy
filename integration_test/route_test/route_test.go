@@ -30,14 +30,14 @@ func TestRequestOnConfigUrl(t *testing.T) {
 	{
 		// create a proxy server
 		ctx, cancel := context.WithCancel(context.Background())
-		err = test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config, loggers.GenLogger())
+		err = test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config, loggers.GenLogger(nil))
 		assert.NoError(t, err)
 		defer cancel()
 	}
 	{
 		// create a sample http server to return "hello world"
 		ctx, cancel := context.WithCancel(context.Background())
-		err = test_utils.StartSampleHttpServer(ctx, SAMPLE_SERVER_HTTP_ADDRESS, loggers.GenLogger())
+		err = test_utils.StartSampleHttpServer(ctx, SAMPLE_SERVER_HTTP_ADDRESS, loggers.GenLogger(nil))
 		assert.NoError(t, err)
 		defer cancel()
 	}
