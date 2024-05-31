@@ -44,6 +44,13 @@ func StrToLogLevel(strLogLevel string) (int, error) {
 	}
 }
 
+func getSlog() *slog.Logger {
+	var debugLevel = new(slog.LevelVar)
+	debugLevel.Set(slog.LevelDebug)
+
+	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: debugLevel}))
+}
+
 func GenLogger(settings *LoggerSettings) *Logger {
 	s := &LoggerSettings{
 		LogLevel: INFO,
@@ -51,8 +58,9 @@ func GenLogger(settings *LoggerSettings) *Logger {
 	if settings != nil {
 		s = settings
 	}
+
 	return &Logger{
-		log:   slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		log:   getSlog(),
 		level: s.LogLevel,
 	}
 }

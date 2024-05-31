@@ -161,7 +161,7 @@ func SetupProxy(config *models.ProxyConfig, logger *loggers.Logger) (*goproxy.Pr
 func (p *ProxySeed) getProxyHttpServer() (*goproxy.ProxyHttpServer, error) {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Logger = GenLoggerForProxy(p.logger)
-	// proxy.Verbose = true
+	proxy.Verbose = true
 
 	for _, route := range p.config.Routes {
 		routeUrl, err := url.ParseRequestURI(route.Url)
