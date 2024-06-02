@@ -1,27 +1,31 @@
 routes:
-  - url: "https://sample.jp/?foo=bar#12"
+  # tests for response.content
+  - url: "https://content.test"
     response:
-      content: "matched"
+      content: "basic"
+  - url: "https://content.test?foo=bar#12"
+    response:
+      content: "with url queries"
       content_type: "text/custom"
       status: 201
-  - url: "https://sample.jp/"
+  - url: "http://content.test"
     response:
-      content: "matched"
-  - url: "https://sample.co.jp/foo/bar/"
+      content: "with http schema"
+
+  # tests for response.file
+  - url: "https://file-1.test/foo/bar/"
     response:
       file: "sample2.txt"
-  - url: "https://sample.com"
+  - url: "https://file-2.test"
     response:
       file: "sample1.html"
       content_type: "text/custom"
-  - url: "http://http.content.com"
-    response:
-      content: "http,content"
-  - url: "http://http.file.com"
+  - url: "http://file-http.test"
     response:
       file: "sample2.txt"
 
-  - url: "http://url.test"
+  # tests for response.url
+  - url: "https://url.test"
     response:
       url: "http://localhost:8082"
   - url: "https://dummy.test:8082"
@@ -29,6 +33,6 @@ routes:
       url:
         from: https://dummy.test
         to: http://localhost
-  - url: "https://https.url.test"
+  - url: "http://http.test"
     response:
       url: "http://localhost:8082"
