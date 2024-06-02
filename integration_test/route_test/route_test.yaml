@@ -24,6 +24,11 @@ routes:
   - url: "http://url.test"
     response:
       url: "http://localhost:8082"
+  - url: "https://dummy.test:8082"
+    response:
+      url:
+        from: https://dummy.test
+        to: http://localhost
   - url: "https://https.url.test"
     response:
       url: "http://localhost:8082"

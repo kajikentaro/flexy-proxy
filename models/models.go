@@ -12,7 +12,7 @@ type ProxyConfig struct {
 type ProxyRoute struct {
 	Url      string
 	Response struct {
-		Url     string
+		Url     *UrlReplacement
 		Content string
 		File    string
 

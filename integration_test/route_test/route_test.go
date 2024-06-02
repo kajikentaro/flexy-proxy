@@ -22,7 +22,6 @@ var PROXY_URL = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER)
 
 var SAMPLE_SERVER_PORT_NUMBER = 8082
 var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
-var SAMPLE_SERVER_URL = fmt.Sprintf("http://localhost:%d", SAMPLE_SERVER_PORT_NUMBER)
 
 func TestRequestOnConfigUrl(t *testing.T) {
 	config, err := utils.ParseConfig("route_test.yaml")
@@ -73,7 +72,7 @@ func TestRequestOnConfigUrl(t *testing.T) {
 				b, err := os.ReadFile(c.Response.File)
 				assert.NoError(t, err)
 				assert.Equal(t, b, body)
-			} else if c.Response.Url != "" {
+			} else if c.Response.Url != nil {
 				assert.Equal(t, "hello world", string(body))
 			} else {
 				t.Error("invalid config format")

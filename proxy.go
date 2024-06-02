@@ -63,12 +63,12 @@ func (*ProxySeed) serveContent(req *http.Request, userStatusCode int, userConten
 	return req, res
 }
 
-func (*ProxySeed) serveUrl(req *http.Request, userStatusCode int, userContentType string, url *url.URL) (*http.Request, *http.Response) {
+func (*ProxySeed) serveUrl(req *http.Request, userStatusCode int, userContentType string, nextUrl *url.URL) (*http.Request, *http.Response) {
 	// fetch response as a reverse proxy
 	fileRes := NewFileResponse(req)
 	proxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
-			req.URL = url
+			req.URL = nextUrl
 		},
 	}
 	proxy.ServeHTTP(fileRes, req)
@@ -126,17 +126,17 @@ func (p *ProxySeed) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.R
 }
 
 func (p *ProxySeed) overwrite(req *http.Request, ctx *goproxy.ProxyCtx, route models.ProxyRoute) (*http.Request, *http.Response) {
-	if route.Response.Url != "" {
+	if route.Response.Url != nil {
 		p.logger.Info("routed to the URL", "request URL", req.URL.String(), "forward URL", route.Response.Url)
-		url, err := url.ParseRequestURI(route.Response.Url)
+
+		nextUrl, err := route.Response.Url.Replace(req.URL)
 		if err != nil {
-			return p.handleProxyRuntimeError(req, "Failed to parse URL:", route.Response.Url)
+			return p.handleProxyRuntimeError(req, "Failed to replace url", err.Error())
 		}
-		return p.serveUrl(req, route.Response.Status, route.Response.ContentType, url)
+		return p.serveUrl(req, route.Response.Status, route.Response.ContentType, nextUrl)
 	}
 
 	if route.Response.File != "" {
-		// TODO use std out
 		p.logger.Info("routed to the file", "request URL", req.URL.String(), "file", route.Response.File)
 		return p.serveFile(req, route.Response.Status, route.Response.ContentType, route.Response.File)
 	}
@@ -175,7 +175,12 @@ func (p *ProxySeed) getProxyHttpServer() (*goproxy.ProxyHttpServer, error) {
 			return nil, err
 		}
 		if routeUrl.Scheme == "https" {
-			reqHost := fmt.Sprintf("%s:443", routeUrl.Host)
+			var reqHost string
+			if routeUrl.Port() == "" {
+				reqHost = fmt.Sprintf("%s:443", routeUrl.Host)
+			} else {
+				reqHost = routeUrl.Host
+			}
 			proxy.OnRequest(goproxy.ReqHostIs(reqHost)).HandleConnect(goproxy.AlwaysMitm)
 			continue
 		}
