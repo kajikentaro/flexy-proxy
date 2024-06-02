@@ -116,6 +116,12 @@ func (p *ProxySeed) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.R
 		res.Header.Add("Elastic-Proxy", fmt.Sprintf("matched URL: %s", routeUrl))
 		return req, res
 	}
+
+	if p.config.DefaultRoute.DenyAccess {
+		content := fmt.Sprintf("%s is out of routes", req.URL.String())
+		return req, goproxy.NewResponse(req, goproxy.ContentTypeText, http.StatusForbidden, content)
+	}
+
 	return req, nil
 }
 
@@ -180,6 +186,10 @@ func (p *ProxySeed) getProxyHttpServer() (*goproxy.ProxyHttpServer, error) {
 	}
 
 	proxy.OnRequest().DoFunc(p.onRequest)
+
+	if p.config.DefaultRoute.DenyAccess {
+		proxy.OnRequest().HandleConnect(goproxy.AlwaysReject)
+	}
 
 	if p.config.DefaultRoute.ProxyUrl != "" {
 		proxy.ConnectDial = proxy.NewConnectDialToProxy(p.config.DefaultRoute.ProxyUrl)

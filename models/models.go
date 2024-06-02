@@ -3,7 +3,8 @@ package models
 type ProxyConfig struct {
 	Routes       []ProxyRoute
 	DefaultRoute struct {
-		ProxyUrl string `yaml:"proxy_url"`
+		ProxyUrl   string `yaml:"proxy_url"`
+		DenyAccess bool   `yaml:"deny_access"`
 	} `yaml:"default_route"`
 	LogLevel string `yaml:"log_level"`
 }

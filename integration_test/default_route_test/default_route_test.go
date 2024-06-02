@@ -51,3 +51,52 @@ func TestRequestOnOtherUrl(t *testing.T) {
 
 	assert.Equal(t, "1,2,3", string(body))
 }
+
+func TestRequestDenial(t *testing.T) {
+	// setup 1st proxy
+	{
+		config, err := utils.ParseConfig("1st_proxy_deny.yaml")
+		assert.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config, loggers.GenLogger(nil))
+		defer cancel()
+	}
+
+	// setup 2nd proxy which is used if a request url does not match urls on config file
+	{
+		config, err := utils.ParseConfig("2nd_proxy.yaml")
+		assert.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config, loggers.GenLogger(nil))
+		defer cancel()
+	}
+
+	// test:
+	// if a request url is https, the proxy returns ERR_EMPTY_RESPONSE
+	{
+		proxyUrl, err := url.Parse(PROXY_URL_1)
+		assert.NoError(t, err)
+		res, err := test_utils.Request(proxyUrl, "https://out-of-route-url.test")
+
+		var urlError *url.Error
+		assert.ErrorAs(t, err, &urlError)
+		assert.Nil(t, res)
+	}
+
+	// test:
+	// if a request url is http, the proxy returns ERR_EMPTY_RESPONSE
+	{
+		proxyUrl, err := url.Parse(PROXY_URL_1)
+		assert.NoError(t, err)
+		res, err := test_utils.Request(proxyUrl, "http://out-of-route-url.test")
+
+		assert.NoError(t, err)
+		assert.Equal(t, 403, res.StatusCode)
+
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, "http://out-of-route-url.test/ is out of routes", string(body))
+	}
+}
