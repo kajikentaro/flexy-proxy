@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"crypto/tls"
 	"fmt"
 	"go-proxy/loggers"
 	"go-proxy/models"
@@ -99,6 +100,14 @@ func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
 	}
 
 	if proxyUrl := p.defaultRoute.ProxyUrl; proxyUrl != "" {
+		// proxy which is used when "AlwaysMitm" hits
+		proxy.Tr = &http.Transport{
+			Proxy: func(req *http.Request) (*url.URL, error) {
+				return url.Parse(proxyUrl)
+			},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		// proxy which is used when "AlwaysMitm" doesn't hits
 		proxy.ConnectDial = proxy.NewConnectDialToProxy(proxyUrl)
 	}
 
