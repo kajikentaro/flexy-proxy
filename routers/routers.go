@@ -79,7 +79,7 @@ type route struct {
 
 func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 	for _, route := range r.routes {
-		if !isUrlSame(route.parsedUrl, reqUrl) {
+		if !isUrlSame(reqUrl, route) {
 			continue
 		}
 		matchedUrl := route.raw.Url
@@ -107,25 +107,38 @@ func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 	return models.Handler{}, "", nil
 }
 
-func isUrlSame(a *url.URL, b *url.URL) bool {
-	if a.Scheme != b.Scheme {
+var regLast443 = regexp.MustCompile(":443$")
+
+func removeSuffix443FromHostName(in url.URL) string {
+	// remove last ":443" which is added automatically by goproxy
+	in.Host = regLast443.ReplaceAllString(in.Host, "")
+	return in.String()
+}
+
+func isUrlSame(in *url.URL, route route) bool {
+	if route.raw.Regex {
+		inStr := removeSuffix443FromHostName(*in)
+		return route.regexUrl.MatchString(inStr)
+	}
+
+	if in.Scheme != route.parsedUrl.Scheme {
 		return false
 	}
-	if a.Hostname() != b.Hostname() {
+	if in.Hostname() != route.parsedUrl.Hostname() {
 		return false
 	}
-	pathA := a.EscapedPath()
+	pathA := in.EscapedPath()
 	if pathA == "" {
 		pathA = "/"
 	}
-	pathB := b.EscapedPath()
+	pathB := route.parsedUrl.EscapedPath()
 	if pathB == "" {
 		pathB = "/"
 	}
 	if pathA != pathB {
 		return false
 	}
-	if a.RawQuery != b.RawQuery {
+	if in.RawQuery != route.parsedUrl.RawQuery {
 		return false
 	}
 	return true

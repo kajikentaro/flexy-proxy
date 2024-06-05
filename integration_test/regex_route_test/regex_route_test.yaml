@@ -1,0 +1,22 @@
+routes:
+  - url: "https://content.test/.*/[0-9]+"
+    regex: true
+    response:
+      content: "basic"
+  - url: "https://file.test/.*\\.txt$"
+    regex: true
+    response:
+      file: "sample.txt"
+  - url: "http://localhost:8086/.*"
+    regex: true
+    response:
+      url:
+        # v1.2 will be v1.2.1
+        # i.e.
+        # `path/v1.2-win64.zip` -> `path/v1.2.1-win64.zip`
+        from: "path/v1.2-(.*)"
+        to: "path/v1.2.1-$1"
+        regex: true
+
+default_route:
+  deny_access: true
