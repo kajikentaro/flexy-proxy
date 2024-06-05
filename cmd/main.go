@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go-proxy"
 	"go-proxy/loggers"
+	"go-proxy/proxy"
 	"go-proxy/routers"
 	"go-proxy/utils"
 	"net/http"
