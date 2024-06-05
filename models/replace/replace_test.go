@@ -1,7 +1,7 @@
-package models_test
+package replace_test
 
 import (
-	"go-proxy/models"
+	"go-proxy/models/replace"
 	"net/url"
 	"testing"
 
@@ -10,10 +10,10 @@ import (
 )
 
 type DummyStruct struct {
-	Url models.UrlReplacement
+	Url replace.Url
 }
 
-func TestUnmrashalYamlString(t *testing.T) {
+func TestSingleString(t *testing.T) {
 	yamlData := `
 url: "http://target.url"
 `
@@ -30,7 +30,7 @@ url: "http://target.url"
 	assert.Equal(t, expected, actual)
 }
 
-func TestUnmrashalYamlObject(t *testing.T) {
+func TestStringReplacement(t *testing.T) {
 	yamlData := `
 url:
   from: 'original'
@@ -45,6 +45,26 @@ url:
 	actual, err := res.Url.Replace(input)
 	assert.NoError(t, err)
 	expected, _ := url.ParseRequestURI("http://replaced.url")
+
+	assert.Equal(t, expected, actual)
+}
+
+func TestRegexReplacement(t *testing.T) {
+	yamlData := `
+url:
+  from: 'http://(.*)\.url'
+  to: 'http://$1-2.net'
+  regex: true
+`
+
+	var res DummyStruct
+	err := yaml.Unmarshal([]byte(yamlData), &res)
+	assert.NoError(t, err)
+
+	input, _ := url.ParseRequestURI("http://original.url")
+	actual, err := res.Url.Replace(input)
+	assert.NoError(t, err)
+	expected, _ := url.ParseRequestURI("http://original-2.net")
 
 	assert.Equal(t, expected, actual)
 }

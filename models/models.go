@@ -1,22 +1,57 @@
 package models
 
-type ProxyConfig struct {
-	Routes       []ProxyRoute
-	DefaultRoute struct {
-		ProxyUrl   string `yaml:"proxy_url"`
-		DenyAccess bool   `yaml:"deny_access"`
-	} `yaml:"default_route"`
-	LogLevel string `yaml:"log_level"`
+import (
+	"go-proxy/models/replace"
+	"net/http"
+	"net/url"
+)
+
+type RawConfig struct {
+	Routes       []Route
+	DefaultRoute DefaultRoute `yaml:"default_route"`
+	LogLevel     string       `yaml:"log_level"`
 }
 
-type ProxyRoute struct {
+type DefaultRoute struct {
+	ProxyUrl   string `yaml:"proxy_url"`
+	DenyAccess bool   `yaml:"deny_access"`
+}
+
+type Handler struct {
+	Content      ContentHandler
+	File         FileHandler
+	ReverseProxy ReverseProxyHandler
+}
+
+type Router interface {
+	GetHttpsHostList() []string
+	GetHandler(*url.URL) (handler Handler, matchedUrl string, err error)
+}
+
+type Route struct {
 	Url      string
+	Regex    bool
 	Response struct {
-		Url     *UrlReplacement
+		Url     *replace.Url
 		Content string
 		File    string
 
 		ContentType string `yaml:"content_type"`
 		Status      int
 	}
+}
+
+type FileHandler interface {
+	Handler(w http.ResponseWriter, r *http.Request)
+	FilePath() string
+}
+
+type ContentHandler interface {
+	Handler(w http.ResponseWriter, r *http.Request)
+	Content() string
+}
+
+type ReverseProxyHandler interface {
+	Handler(w http.ResponseWriter, r *http.Request)
+	ForwardUrl() string
 }

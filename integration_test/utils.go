@@ -8,6 +8,7 @@ import (
 	"go-proxy"
 	"go-proxy/loggers"
 	"go-proxy/models"
+	"go-proxy/routers"
 	"net/http"
 	"net/url"
 	"time"
@@ -47,11 +48,13 @@ func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Log
 	return nil
 }
 
-func StartProxyServer(ctx context.Context, proxyAddr string, config *models.ProxyConfig, logger *loggers.Logger) error {
-	proxy, err := proxy.SetupProxy(config, loggers.GenLogger(nil))
+func StartProxyServer(ctx context.Context, proxyAddr string, config *models.RawConfig, logger *loggers.Logger) error {
+	router, err := routers.GenRouter(config.Routes)
 	if err != nil {
 		return err
 	}
+
+	proxy := proxy.SetupProxy(router, logger, &config.DefaultRoute)
 
 	srv := &http.Server{Addr: proxyAddr, Handler: proxy}
 

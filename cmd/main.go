@@ -2,12 +2,19 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"go-proxy"
 	"go-proxy/loggers"
+	"go-proxy/routers"
 	"go-proxy/utils"
-	"log"
 	"net/http"
+	"os"
 )
+
+func fatalf(format string, a ...any) {
+	fmt.Fprintf(os.Stderr, format+"\n", a...)
+	os.Exit(1)
+}
 
 func main() {
 	// TODO: add tests
@@ -17,7 +24,7 @@ func main() {
 
 	config, err := utils.ParseConfig(customConfigPath)
 	if err != nil {
-		log.Fatalf("Error parsing config: %v", err)
+		fatalf("Error parsing config: %v", err)
 	}
 
 	logLevelStr := "INFO"
@@ -26,15 +33,17 @@ func main() {
 	}
 	logLevel, err := loggers.StrToLogLevel(logLevelStr)
 	if err != nil {
-		log.Fatal(err)
+		fatalf("%v", err)
 	}
 	logger := loggers.GenLogger(&loggers.LoggerSettings{
 		LogLevel: logLevel,
 	})
 
-	proxy, err := proxy.SetupProxy(config, logger)
+	router, err := routers.GenRouter(config.Routes)
 	if err != nil {
-		log.Fatalln("failed to init proxy", err)
+		fatalf("%v", err)
 	}
-	log.Fatal(http.ListenAndServe(":9999", proxy))
+
+	proxy := proxy.SetupProxy(router, logger, &config.DefaultRoute)
+	fatalf("%v", http.ListenAndServe(":9999", proxy))
 }

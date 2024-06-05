@@ -16,7 +16,7 @@ func getConfigPath(customPath string) (string, error) {
 	return filepath.Abs(customPath)
 }
 
-func ParseConfig(customPath string) (*models.ProxyConfig, error) {
+func ParseConfig(customPath string) (*models.RawConfig, error) {
 	configPath, err := getConfigPath(customPath)
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func ParseConfig(customPath string) (*models.ProxyConfig, error) {
 		return nil, err
 	}
 
-	var config models.ProxyConfig
+	var config models.RawConfig
 	err = yaml.Unmarshal(fileContent, &config)
 	if err != nil {
 		return nil, err
