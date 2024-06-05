@@ -107,18 +107,9 @@ func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 	return models.Handler{}, "", nil
 }
 
-var regLast443 = regexp.MustCompile(":443$")
-
-func removeSuffix443FromHostName(in url.URL) string {
-	// remove last ":443" which is added automatically by goproxy
-	in.Host = regLast443.ReplaceAllString(in.Host, "")
-	return in.String()
-}
-
 func isUrlSame(in *url.URL, route route) bool {
 	if route.raw.Regex {
-		inStr := removeSuffix443FromHostName(*in)
-		return route.regexUrl.MatchString(inStr)
+		return route.regexUrl.MatchString(in.String())
 	}
 
 	if in.Scheme != route.parsedUrl.Scheme {

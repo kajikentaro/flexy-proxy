@@ -5,6 +5,8 @@ import (
 	"go-proxy/loggers"
 	"go-proxy/models"
 	"net/http"
+	"net/url"
+	"regexp"
 
 	"github.com/elazarl/goproxy"
 )
@@ -21,7 +23,17 @@ func (p *Proxy) handleProxyRuntimeError(req *http.Request, err error) (*http.Req
 	return req, res
 }
 
+var regLast443 = regexp.MustCompile(":443$")
+
+func removeSuffix443FromHostName(u url.URL) *url.URL {
+	// remove last ":443" which is added automatically by goproxy
+	u.Host = regLast443.ReplaceAllString(u.Host, "")
+	return &u
+}
+
 func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+	req.URL = removeSuffix443FromHostName(*req.URL)
+
 	handler, matchedUrl, err := p.router.GetHandler(req.URL)
 	if err != nil {
 		p.handleProxyRuntimeError(req, err)
