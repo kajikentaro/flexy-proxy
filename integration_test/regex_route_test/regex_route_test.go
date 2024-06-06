@@ -126,3 +126,27 @@ func TestReverseProxy(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "/path/v1.2.1-win64.zip", string(body))
 }
+
+func TestIfHostnameIsRegex(t *testing.T) {
+	proxyUrl, err := url.Parse(PROXY_URL)
+	assert.NoError(t, err)
+
+	{
+		res, err := test_utils.Request(proxyUrl, "https://host-abc-999.test")
+		assert.NoError(t, err)
+		defer res.Body.Close()
+
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, "host-name-number", string(body))
+	}
+	{
+		res, err := test_utils.Request(proxyUrl, "https://host-.test/foo/bar/-999.test/")
+		assert.NoError(t, err)
+		defer res.Body.Close()
+
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, "host-name-number", string(body))
+	}
+}

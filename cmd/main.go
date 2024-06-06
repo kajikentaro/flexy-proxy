@@ -44,6 +44,6 @@ func main() {
 		fatalf("%v", err)
 	}
 
-	proxy := proxy.SetupProxy(router, logger, &config.DefaultRoute)
+	proxy := proxy.SetupProxy(router, logger, utils.GetProxyConfig(config))
 	fatalf("%v", http.ListenAndServe(":9999", proxy))
 }

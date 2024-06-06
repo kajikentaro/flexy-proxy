@@ -10,6 +10,7 @@ type RawConfig struct {
 	Routes       []Route
 	DefaultRoute DefaultRoute `yaml:"default_route"`
 	LogLevel     string       `yaml:"log_level"`
+	AlwaysMitm   bool         `yaml:"always_mitm"`
 }
 
 type DefaultRoute struct {

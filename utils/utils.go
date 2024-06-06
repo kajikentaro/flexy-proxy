@@ -2,6 +2,7 @@ package utils
 
 import (
 	"go-proxy/models"
+	"go-proxy/proxy"
 	"os"
 	"path/filepath"
 
@@ -16,6 +17,14 @@ func getConfigPath(customPath string) (string, error) {
 	return filepath.Abs(customPath)
 }
 
+var DEFAULT_CONFIG = models.RawConfig{
+	AlwaysMitm: true,
+	LogLevel:   "INFO",
+	DefaultRoute: models.DefaultRoute{
+		DenyAccess: false,
+	},
+}
+
 func ParseConfig(customPath string) (*models.RawConfig, error) {
 	configPath, err := getConfigPath(customPath)
 	if err != nil {
@@ -27,10 +36,17 @@ func ParseConfig(customPath string) (*models.RawConfig, error) {
 		return nil, err
 	}
 
-	var config models.RawConfig
+	config := DEFAULT_CONFIG
 	err = yaml.Unmarshal(fileContent, &config)
 	if err != nil {
 		return nil, err
 	}
 	return &config, nil
+}
+
+func GetProxyConfig(rawConfig *models.RawConfig) *proxy.Config {
+	return &proxy.Config{
+		DefaultRoute: &rawConfig.DefaultRoute,
+		AlwaysMitm:   rawConfig.AlwaysMitm,
+	}
 }

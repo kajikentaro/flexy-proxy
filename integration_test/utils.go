@@ -9,6 +9,7 @@ import (
 	"go-proxy/models"
 	"go-proxy/proxy"
 	"go-proxy/routers"
+	"go-proxy/utils"
 	"net/http"
 	"net/url"
 	"time"
@@ -58,7 +59,7 @@ func StartProxyServer(ctx context.Context, proxyAddr string, config *models.RawC
 		return err
 	}
 
-	proxy := proxy.SetupProxy(router, logger, &config.DefaultRoute)
+	proxy := proxy.SetupProxy(router, logger, utils.GetProxyConfig(config))
 
 	srv := &http.Server{Addr: proxyAddr, Handler: proxy}
 

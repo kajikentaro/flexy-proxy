@@ -17,6 +17,10 @@ routes:
         from: "path/v1.2-(.*)"
         to: "path/v1.2.1-$1"
         regex: true
+  - url: "https://host-.*-[0-9]+.test/$"
+    regex: true
+    response:
+      content: "host-name-number"
 
 default_route:
   deny_access: true

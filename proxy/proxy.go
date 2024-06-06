@@ -63,7 +63,7 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 
 	// if the request doesn't match any routes
 
-	if p.defaultRoute.DenyAccess {
+	if p.config.DefaultRoute.DenyAccess {
 		content := fmt.Sprintf("%s is out of routes", req.URL.String())
 		return req, goproxy.NewResponse(req, goproxy.ContentTypeText, http.StatusForbidden, content)
 	}
@@ -71,16 +71,21 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 }
 
 type Proxy struct {
-	router       models.Router
-	logger       *loggers.Logger
-	defaultRoute *models.DefaultRoute
+	router models.Router
+	logger *loggers.Logger
+	config *Config
 }
 
-func SetupProxy(router models.Router, logger *loggers.Logger, defaultRoute *models.DefaultRoute) *goproxy.ProxyHttpServer {
+type Config struct {
+	DefaultRoute *models.DefaultRoute
+	AlwaysMitm   bool
+}
+
+func SetupProxy(router models.Router, logger *loggers.Logger, config *Config) *goproxy.ProxyHttpServer {
 	ps := &Proxy{
-		router:       router,
-		logger:       logger,
-		defaultRoute: defaultRoute,
+		router: router,
+		logger: logger,
+		config: config,
 	}
 	return ps.getProxyHttpServer()
 }
@@ -90,16 +95,20 @@ func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
 	proxy.Logger = GenLoggerForProxy(p.logger)
 	proxy.Verbose = true
 
-	hosts := p.router.GetHttpsHostList()
-	proxy.OnRequest(goproxy.ReqHostIs(hosts...)).HandleConnect(goproxy.AlwaysMitm)
+	if p.config.AlwaysMitm {
+		proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+	} else {
+		hosts := p.router.GetHttpsHostList()
+		proxy.OnRequest(goproxy.ReqHostIs(hosts...)).HandleConnect(goproxy.AlwaysMitm)
+	}
 
 	proxy.OnRequest().DoFunc(p.onRequest)
 
-	if p.defaultRoute.DenyAccess {
+	if p.config.DefaultRoute.DenyAccess {
 		proxy.OnRequest().HandleConnect(goproxy.AlwaysReject)
 	}
 
-	if proxyUrl := p.defaultRoute.ProxyUrl; proxyUrl != "" {
+	if proxyUrl := p.config.DefaultRoute.ProxyUrl; proxyUrl != "" {
 		// proxy which is used when "AlwaysMitm" hits
 		proxy.Tr = &http.Transport{
 			Proxy: func(req *http.Request) (*url.URL, error) {
