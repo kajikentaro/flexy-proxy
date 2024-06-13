@@ -9,10 +9,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var DEFAULT_CONFIG_PATH = "config.yaml"
+
 func getConfigPath(customPath string) (string, error) {
 	if customPath == "" {
-		// by default, use "config.yaml" in the current directory
-		return filepath.Abs("config.yaml")
+		return filepath.Abs(DEFAULT_CONFIG_PATH)
 	}
 	return filepath.Abs(customPath)
 }

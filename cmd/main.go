@@ -19,7 +19,9 @@ func fatalf(format string, a ...any) {
 func main() {
 	// TODO: add tests
 	var customConfigPath string
-	flag.StringVar(&customConfigPath, "f", "", "Path to custom config file")
+	flag.StringVar(&customConfigPath, "f", utils.DEFAULT_CONFIG_PATH, "Path to custom config file")
+	var portNum int
+	flag.IntVar(&portNum, "p", 8888, "Port number")
 	flag.Parse()
 
 	config, err := utils.ParseConfig(customConfigPath)
@@ -45,5 +47,7 @@ func main() {
 	}
 
 	proxy := proxy.SetupProxy(router, logger, utils.GetProxyConfig(config))
-	fatalf("%v", http.ListenAndServe(":9999", proxy))
+	addr := fmt.Sprintf(":%d", portNum)
+	fmt.Printf("Proxy started on %s\n", addr)
+	fatalf("%v", http.ListenAndServe(addr, proxy))
 }
