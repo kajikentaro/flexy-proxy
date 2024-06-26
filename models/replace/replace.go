@@ -3,7 +3,6 @@ package replace
 import (
 	"fmt"
 	"net/url"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -50,9 +49,14 @@ There are 3 patters of input.
 */
 type Url struct {
 	SingleUrl string
-	From      string
-	To        string
-	Regex     bool
+	UrlParts
+}
+
+type UrlParts struct {
+	From     string
+	To       string
+	Regex    bool
+	ProxyUrl string `yaml:"proxy_url"`
 }
 
 func (u *Url) Replace(inputUrl *url.URL) (*url.URL, error) {
@@ -92,46 +96,18 @@ func (u *Url) Replace(inputUrl *url.URL) (*url.URL, error) {
 }
 
 func (e *Url) UnmarshalYAML(value *yaml.Node) error {
-	var aux interface{}
-	if err := value.Decode(&aux); err != nil {
-		return err
+	var str string
+	if err := value.Decode(&str); err == nil {
+		e.SingleUrl = str
+		return nil
 	}
 
-	switch raw := aux.(type) {
-	case string:
-		e.SingleUrl = raw
-	case map[string]interface{}:
-		err := mapToStruct(raw, e)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-
-}
-
-// capitalize a initial letter
-func capitalize(s string) string {
-	if len(s) == 0 {
-		return ""
-	}
-	return string(s[0]-'a'+'A') + s[1:]
-}
-
-func mapToStruct(input map[string]interface{}, output interface{}) error {
-	for key, value := range input {
-		ckey := capitalize(key)
-		if field := reflect.ValueOf(output).Elem().FieldByName(ckey); field.IsValid() && field.CanSet() {
-			switch raw := value.(type) {
-			case string:
-				field.SetString(raw)
-			case bool:
-				field.SetBool(raw)
-			default:
-				return fmt.Errorf("unsupported field type: %T for key %s", raw, key)
-			}
-		}
+	var urlParts UrlParts
+	err := value.Decode(&urlParts)
+	if err == nil {
+		e.UrlParts = urlParts
+		return nil
 	}
 
-	return nil
+	return err
 }

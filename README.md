@@ -56,11 +56,12 @@ Either a URL, file, or content must be specified.
 
 ##### `URL`
 
-| Key     | Type    | Description                                       | Example                      |
-| ------- | ------- | ------------------------------------------------- | ---------------------------- |
-| `from`  | string  | The source URL pattern to match.                  | `https://example.com/path`   |
-| `to`    | string  | The destination URL to proxy the request to.      | `http://localhost:3000/path` |
-| `regex` | boolean | Whether to use regex for matching the `from` URL. | `true`                       |
+| Key         | Type    | Description                                       | Example                      |
+| ----------- | ------- | ------------------------------------------------- | ---------------------------- |
+| `from`      | string  | The source URL pattern to match.                  | `https://example.com/path`   |
+| `to`        | string  | The destination URL to proxy the request to.      | `http://localhost:3000/path` |
+| `regex`     | boolean | Whether to use regex for matching the `from` URL. | `true`                       |
+| `proxy_url` | string  | The URL of the proxy to use for this route.       | `http://proxy.example.com`   |
 
 ## Config example
 
@@ -97,4 +98,14 @@ routes:
     regex: true
     response:
       file: "sample.png"
+  # if the request url is "https://example.com/proxy",
+  # reverse proxy to "https://example.com/api" using a specific proxy.
+  - url: "https://example.com/proxy"
+    regex: false
+    response:
+      url:
+        from: "https://example.com/proxy"
+        to: "https://example.com/api"
+        regex: false
+        proxy_url: "http://proxy.example.com"
 ```

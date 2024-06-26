@@ -8,11 +8,12 @@ import (
 	"net/url"
 )
 
-func NewReverseProxyHandler(statusCode int, contentType string, forwardUrl *url.URL) models.ReverseProxyHandler {
+func NewReverseProxyHandler(statusCode int, contentType string, forwardUrl *url.URL, proxyUrl *url.URL) models.ReverseProxyHandler {
 	return &reverseProxyHandle{
 		statusCode:  statusCode,
 		contentType: contentType,
 		forwardUrl:  forwardUrl,
+		proxyUrl:    proxyUrl,
 	}
 }
 
@@ -20,16 +21,23 @@ type reverseProxyHandle struct {
 	forwardUrl  *url.URL
 	statusCode  int
 	contentType string
+	proxyUrl    *url.URL
 }
 
 func (c *reverseProxyHandle) Handler(w http.ResponseWriter, r *http.Request) {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	if c.proxyUrl != nil {
+		t.Proxy = func(req *http.Request) (*url.URL, error) {
+			return c.proxyUrl, nil
+		}
+	}
+
 	proxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL = c.forwardUrl
 		},
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
+		Transport: t,
 	}
 	proxy.ServeHTTP(w, r)
 

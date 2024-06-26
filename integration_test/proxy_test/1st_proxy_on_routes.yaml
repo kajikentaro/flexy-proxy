@@ -1,0 +1,16 @@
+routes:
+  - url: "https://go-proxy.test/"
+    response:
+      url:
+        from: ".*"
+        to: "https://default-proxy.jp/"
+        regex: true
+        proxy_url: "http://localhost:8084"
+
+  - url: "https://default-proxy.jp/"
+    response:
+      url:
+        proxy_url: "http://localhost:8084"
+
+default_route:
+  deny_access: true

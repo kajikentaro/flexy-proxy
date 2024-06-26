@@ -34,6 +34,14 @@ func parse(rawRoutes []models.Route) ([]route, error) {
 		}
 		newR.parsedUrl = parsedUrl
 
+		if inR.Response.Url != nil && inR.Response.Url.ProxyUrl != "" {
+			parsedProxyUrl, err := url.ParseRequestURI(inR.Response.Url.ProxyUrl)
+			if err != nil {
+				return nil, err
+			}
+			newR.proxyUrl = parsedProxyUrl
+		}
+
 		routes = append(routes, newR)
 	}
 
@@ -75,6 +83,7 @@ type route struct {
 	parsedUrl *url.URL
 	regexUrl  *regexp.Regexp
 	raw       *models.Route
+	proxyUrl  *url.URL
 }
 
 func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
@@ -94,7 +103,7 @@ func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 			if err != nil {
 				return models.Handler{}, matchedUrl, err
 			}
-			h := NewReverseProxyHandler(route.raw.Response.Status, route.raw.Response.ContentType, newUrl)
+			h := NewReverseProxyHandler(route.raw.Response.Status, route.raw.Response.ContentType, newUrl, route.proxyUrl)
 			return models.Handler{ReverseProxy: h}, matchedUrl, nil
 		}
 
