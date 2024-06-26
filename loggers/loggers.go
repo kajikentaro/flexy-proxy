@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+
+	"github.com/phsym/console-slog"
 )
 
 const (
@@ -48,7 +50,7 @@ func getSlog() *slog.Logger {
 	var debugLevel = new(slog.LevelVar)
 	debugLevel.Set(slog.LevelDebug)
 
-	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: debugLevel}))
+	return slog.New(console.NewHandler(os.Stdout, &console.HandlerOptions{Level: slog.LevelDebug}))
 }
 
 func GenLogger(settings *LoggerSettings) *Logger {
