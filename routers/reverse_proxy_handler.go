@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"crypto/tls"
 	"go-proxy/models"
 	"net/http"
 	"net/http/httputil"
@@ -25,6 +26,9 @@ func (c *reverseProxyHandle) Handler(w http.ResponseWriter, r *http.Request) {
 	proxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL = c.forwardUrl
+		},
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
 	proxy.ServeHTTP(w, r)
