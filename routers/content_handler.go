@@ -1,8 +1,9 @@
 package routers
 
 import (
-	"go-proxy/models"
 	"net/http"
+
+	"github.com/kajikentaro/elastic-proxy/models"
 )
 
 func NewContentHandler(statusCode int, contentType string, body string) models.ContentHandler {

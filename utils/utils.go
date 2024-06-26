@@ -1,10 +1,11 @@
 package utils
 
 import (
-	"go-proxy/models"
-	"go-proxy/proxy"
 	"os"
 	"path/filepath"
+
+	"github.com/kajikentaro/elastic-proxy/models"
+	"github.com/kajikentaro/elastic-proxy/proxy"
 
 	"gopkg.in/yaml.v3"
 )

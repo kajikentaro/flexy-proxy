@@ -3,13 +3,14 @@ package test
 import (
 	"context"
 	"fmt"
-	test_utils "go-proxy/integration_test"
-	"go-proxy/loggers"
-	"go-proxy/utils"
 	"io"
 	"net/url"
 	"os"
 	"testing"
+
+	test_utils "github.com/kajikentaro/elastic-proxy/integration_test"
+	"github.com/kajikentaro/elastic-proxy/loggers"
+	"github.com/kajikentaro/elastic-proxy/utils"
 
 	"github.com/stretchr/testify/assert"
 )

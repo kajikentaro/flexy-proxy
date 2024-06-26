@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go-proxy/loggers"
-	"go-proxy/proxy"
-	"go-proxy/routers"
-	"go-proxy/utils"
 	"net/http"
 	"os"
+
+	"github.com/kajikentaro/elastic-proxy/loggers"
+	"github.com/kajikentaro/elastic-proxy/proxy"
+	"github.com/kajikentaro/elastic-proxy/routers"
+	"github.com/kajikentaro/elastic-proxy/utils"
 )
 
 func fatalf(format string, a ...any) {

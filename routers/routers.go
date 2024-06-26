@@ -2,9 +2,10 @@ package routers
 
 import (
 	"fmt"
-	"go-proxy/models"
 	"net/url"
 	"regexp"
+
+	"github.com/kajikentaro/elastic-proxy/models"
 )
 
 type router struct {

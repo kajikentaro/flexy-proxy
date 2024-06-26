@@ -2,7 +2,8 @@ package proxy
 
 import (
 	"fmt"
-	"go-proxy/loggers"
+
+	"github.com/kajikentaro/elastic-proxy/loggers"
 )
 
 type loggerForProxy struct {

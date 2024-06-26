@@ -2,10 +2,11 @@ package routers
 
 import (
 	"crypto/tls"
-	"go-proxy/models"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+
+	"github.com/kajikentaro/elastic-proxy/models"
 )
 
 func NewReverseProxyHandler(statusCode int, contentType string, forwardUrl *url.URL, proxyUrl *url.URL) models.ReverseProxyHandler {

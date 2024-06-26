@@ -1,9 +1,10 @@
 package models
 
 import (
-	"go-proxy/models/replace"
 	"net/http"
 	"net/url"
+
+	"github.com/kajikentaro/elastic-proxy/models/replace"
 )
 
 type RawConfig struct {

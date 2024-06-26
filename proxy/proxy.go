@@ -3,11 +3,12 @@ package proxy
 import (
 	"crypto/tls"
 	"fmt"
-	"go-proxy/loggers"
-	"go-proxy/models"
 	"net/http"
 	"net/url"
 	"regexp"
+
+	"github.com/kajikentaro/elastic-proxy/loggers"
+	"github.com/kajikentaro/elastic-proxy/models"
 
 	"github.com/elazarl/goproxy"
 )

@@ -1,8 +1,9 @@
 package routers
 
 import (
-	"go-proxy/models"
 	"net/http"
+
+	"github.com/kajikentaro/elastic-proxy/models"
 )
 
 func NewFileHandler(statusCode int, contentType string, filePath string) models.FileHandler {

@@ -1,9 +1,10 @@
 package replace_test
 
 import (
-	"go-proxy/models/replace"
 	"net/url"
 	"testing"
+
+	"github.com/kajikentaro/elastic-proxy/models/replace"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
