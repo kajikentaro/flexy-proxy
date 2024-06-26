@@ -14,6 +14,12 @@ This tool is designed to configure a proxy to return customized responses for sp
   - Connect to another proxy.
   - Deny access.
 
+## Installation
+
+```
+go install github.com/kajikentaro/elastic-proxy/cmd/elastic-proxy@latest
+```
+
 ## Configurations
 
 Configurations are defined using the `config.yaml` file.
