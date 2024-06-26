@@ -27,6 +27,7 @@ type Handler struct {
 type Router interface {
 	GetHttpsHostList() []string
 	GetHandler(*url.URL) (handler Handler, matchedUrl string, err error)
+	GetUrlList() []string
 }
 
 type Route struct {

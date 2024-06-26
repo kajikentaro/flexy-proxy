@@ -151,3 +151,11 @@ func (r *router) GetHttpsHostList() []string {
 	}
 	return res
 }
+
+func (r *router) GetUrlList() []string {
+	var res []string
+	for _, route := range r.routes {
+		res = append(res, route.raw.Url)
+	}
+	return res
+}

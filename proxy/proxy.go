@@ -87,6 +87,7 @@ func SetupProxy(router models.Router, logger *loggers.Logger, config *Config) *g
 		logger: logger,
 		config: config,
 	}
+	logger.Info("Proxy has been configured", "route pattern length", len(router.GetUrlList()))
 	return ps.getProxyHttpServer()
 }
 

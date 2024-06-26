@@ -48,6 +48,6 @@ func main() {
 
 	proxy := proxy.SetupProxy(router, logger, utils.GetProxyConfig(config))
 	addr := fmt.Sprintf(":%d", portNum)
-	fmt.Printf("Proxy started on %s\n", addr)
+	logger.Info(fmt.Sprintf("Proxy started on %s", addr))
 	fatalf("%v", http.ListenAndServe(addr, proxy))
 }
