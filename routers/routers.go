@@ -18,7 +18,7 @@ func parse(rawRoutes []models.Route) ([]route, error) {
 	for _, inR := range rawRoutes {
 		inR := inR
 		newR := route{
-			raw: &inR,
+			Route: &inR,
 		}
 
 		if inR.Regex {
@@ -52,10 +52,10 @@ func parse(rawRoutes []models.Route) ([]route, error) {
 func validate(routes []route) error {
 	for _, r := range routes {
 		if r.parsedUrl.Scheme != "http" && r.parsedUrl.Scheme != "https" {
-			return NewValidationError(fmt.Sprintf("scheme of '%s' must be either 'http' or 'https'", r.raw.Url), nil)
+			return NewValidationError(fmt.Sprintf("scheme of '%s' must be either 'http' or 'https'", r.Url), nil)
 		}
 
-		response := r.raw.Response
+		response := r.Response
 		if response.File == "" &&
 			response.Content == "" &&
 			response.Url == nil {
@@ -83,8 +83,8 @@ func GenRouter(routes []models.Route) (models.Router, error) {
 type route struct {
 	parsedUrl *url.URL
 	regexUrl  *regexp.Regexp
-	raw       *models.Route
 	proxyUrl  *url.URL
+	*models.Route
 }
 
 func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
@@ -92,33 +92,33 @@ func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 		if !isUrlSame(reqUrl, route) {
 			continue
 		}
-		matchedUrl := route.raw.Url
+		matchedUrl := route.Url
 
-		if route.raw.Response.Content != "" {
-			h := NewContentHandler(route.raw.Response.Status, route.raw.Response.ContentType, route.raw.Response.Content)
-			return models.Handler{Content: h}, matchedUrl, nil
+		if route.Response.Content != "" {
+			h := NewContentHandler(route.Response.Status, route.Response.ContentType, route.Response.Content)
+			return h, matchedUrl, nil
 		}
 
-		if route.raw.Response.Url != nil {
-			newUrl, err := route.raw.Response.Url.Replace(reqUrl)
+		if route.Response.Url != nil {
+			newUrl, err := route.Response.Url.Replace(reqUrl)
 			if err != nil {
-				return models.Handler{}, matchedUrl, err
+				return nil, matchedUrl, err
 			}
-			h := NewReverseProxyHandler(route.raw.Response.Status, route.raw.Response.ContentType, newUrl, route.proxyUrl)
-			return models.Handler{ReverseProxy: h}, matchedUrl, nil
+			h := NewReverseProxyHandler(route.Response.Status, route.Response.ContentType, newUrl, route.proxyUrl)
+			return h, matchedUrl, nil
 		}
 
-		if route.raw.Response.File != "" {
-			h := NewFileHandler(route.raw.Response.Status, route.raw.Response.ContentType, route.raw.Response.File)
-			return models.Handler{File: h}, matchedUrl, nil
+		if route.Response.File != "" {
+			h := NewFileHandler(route.Response.Status, route.Response.ContentType, route.Response.File)
+			return h, matchedUrl, nil
 		}
 
 	}
-	return models.Handler{}, "", nil
+	return nil, "", models.ErrRouteNotFound
 }
 
 func isUrlSame(in *url.URL, route route) bool {
-	if route.raw.Regex {
+	if route.Regex {
 		return route.regexUrl.MatchString(in.String())
 	}
 
@@ -165,7 +165,7 @@ func (r *router) GetHttpsHostList() []string {
 func (r *router) GetUrlList() []string {
 	var res []string
 	for _, route := range r.routes {
-		res = append(res, route.raw.Url)
+		res = append(res, route.Url)
 	}
 	return res
 }

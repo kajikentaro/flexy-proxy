@@ -6,21 +6,21 @@ import (
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewFileHandler(statusCode int, contentType string, filePath string) models.FileHandler {
-	return &fileHandle{
+func NewFileHandler(statusCode int, contentType string, filePath string) models.Handler {
+	return &FileHandle{
 		statusCode:  statusCode,
 		contentType: contentType,
 		filePath:    filePath,
 	}
 }
 
-type fileHandle struct {
+type FileHandle struct {
 	filePath    string
 	statusCode  int
 	contentType string
 }
 
-func (c *fileHandle) Handler(w http.ResponseWriter, r *http.Request) {
+func (c *FileHandle) Handle(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, c.filePath)
 
 	if c.contentType != "" {
@@ -34,6 +34,12 @@ func (c *fileHandle) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *fileHandle) FilePath() string {
-	return c.filePath
+func (c *FileHandle) GetType() string {
+	return "file"
+}
+
+func (c *FileHandle) GetResponseInfo() map[string]string {
+	return map[string]string{
+		"file path": c.filePath,
+	}
 }

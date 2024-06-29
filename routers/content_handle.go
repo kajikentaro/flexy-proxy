@@ -6,21 +6,21 @@ import (
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewContentHandler(statusCode int, contentType string, body string) models.ContentHandler {
-	return &contentHandle{
+func NewContentHandler(statusCode int, contentType string, body string) models.Handler {
+	return &ContentHandle{
 		statusCode:  statusCode,
 		contentType: contentType,
 		body:        body,
 	}
 }
 
-type contentHandle struct {
+type ContentHandle struct {
 	body        string
 	statusCode  int
 	contentType string
 }
 
-func (c *contentHandle) Handler(w http.ResponseWriter, r *http.Request) {
+func (c *ContentHandle) Handle(w http.ResponseWriter, r *http.Request) {
 	contentType := "text/plain"
 	if c.contentType != "" {
 		contentType = c.contentType
@@ -36,6 +36,12 @@ func (c *contentHandle) Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", contentType)
 }
 
-func (c *contentHandle) Content() string {
-	return c.body
+func (c *ContentHandle) GetType() string {
+	return "content"
+}
+
+func (c *ContentHandle) GetResponseInfo() map[string]string {
+	return map[string]string{
+		"content": c.body,
+	}
 }

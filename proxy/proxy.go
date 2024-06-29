@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -37,6 +38,14 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 	req.URL = removeSuffix443FromHostName(*req.URL)
 
 	handler, matchedUrl, err := p.router.GetHandler(req.URL)
+	// if the request doesn't match any routes
+	if errors.Is(err, models.ErrRouteNotFound) {
+		if p.config.DefaultRoute.DenyAccess {
+			content := fmt.Sprintf("%s is out of routes", req.URL.String())
+			return req, goproxy.NewResponse(req, goproxy.ContentTypeText, http.StatusForbidden, content)
+		}
+		return req, nil
+	}
 	if err != nil {
 		p.handleProxyRuntimeError(req, err)
 	}
@@ -44,31 +53,19 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 	resWriter := NewResponseWriter(req)
 	resWriter.Header().Add("Elastic-Proxy", fmt.Sprintf("matched URL: %s", matchedUrl))
 
-	if h := handler.ReverseProxy; h != nil {
-		p.logger.Info("routed to the URL", "request URL", req.URL.String(), "forward URL", h.ForwardUrl())
-		h.Handler(resWriter, req)
-		return req, resWriter.res
+	// logging
+	args := []interface{}{
+		"request URL", req.URL.String(),
+		"matched URL", matchedUrl,
+		"type", handler.GetType(),
+	}
+	for k, v := range handler.GetResponseInfo() {
+		args = append(args, k, v)
 	}
 
-	if h := handler.File; h != nil {
-		p.logger.Info("routed to the file", "request URL", req.URL.String(), "file", h.FilePath())
-		h.Handler(resWriter, req)
-		return req, resWriter.res
-	}
-
-	if h := handler.Content; h != nil {
-		p.logger.Info("routed to the content", "request URL", req.URL.String(), "content", h.Content())
-		h.Handler(resWriter, req)
-		return req, resWriter.res
-	}
-
-	// if the request doesn't match any routes
-
-	if p.config.DefaultRoute.DenyAccess {
-		content := fmt.Sprintf("%s is out of routes", req.URL.String())
-		return req, goproxy.NewResponse(req, goproxy.ContentTypeText, http.StatusForbidden, content)
-	}
-	return req, nil
+	p.logger.Info("request matched a route", args...)
+	handler.Handle(resWriter, req)
+	return req, resWriter.res
 }
 
 type Proxy struct {

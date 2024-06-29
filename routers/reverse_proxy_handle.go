@@ -9,8 +9,8 @@ import (
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewReverseProxyHandler(statusCode int, contentType string, forwardUrl *url.URL, proxyUrl *url.URL) models.ReverseProxyHandler {
-	return &reverseProxyHandle{
+func NewReverseProxyHandler(statusCode int, contentType string, forwardUrl *url.URL, proxyUrl *url.URL) models.Handler {
+	return &ReverseProxyHandle{
 		statusCode:  statusCode,
 		contentType: contentType,
 		forwardUrl:  forwardUrl,
@@ -18,14 +18,14 @@ func NewReverseProxyHandler(statusCode int, contentType string, forwardUrl *url.
 	}
 }
 
-type reverseProxyHandle struct {
+type ReverseProxyHandle struct {
 	forwardUrl  *url.URL
 	statusCode  int
 	contentType string
 	proxyUrl    *url.URL
 }
 
-func (c *reverseProxyHandle) Handler(w http.ResponseWriter, r *http.Request) {
+func (c *ReverseProxyHandle) Handle(w http.ResponseWriter, r *http.Request) {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	if c.proxyUrl != nil {
@@ -53,6 +53,12 @@ func (c *reverseProxyHandle) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *reverseProxyHandle) ForwardUrl() string {
-	return c.forwardUrl.String()
+func (c *ReverseProxyHandle) GetType() string {
+	return "reverse proxy"
+}
+
+func (c *ReverseProxyHandle) GetResponseInfo() map[string]string {
+	return map[string]string{
+		"forward url": c.forwardUrl.String(),
+	}
 }

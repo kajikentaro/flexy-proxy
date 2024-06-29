@@ -19,12 +19,6 @@ type DefaultRoute struct {
 	DenyAccess bool   `yaml:"deny_access"`
 }
 
-type Handler struct {
-	Content      ContentHandler
-	File         FileHandler
-	ReverseProxy ReverseProxyHandler
-}
-
 type Router interface {
 	GetHttpsHostList() []string
 	GetHandler(*url.URL) (handler Handler, matchedUrl string, err error)
@@ -44,17 +38,8 @@ type Route struct {
 	}
 }
 
-type FileHandler interface {
-	Handler(w http.ResponseWriter, r *http.Request)
-	FilePath() string
-}
-
-type ContentHandler interface {
-	Handler(w http.ResponseWriter, r *http.Request)
-	Content() string
-}
-
-type ReverseProxyHandler interface {
-	Handler(w http.ResponseWriter, r *http.Request)
-	ForwardUrl() string
+type Handler interface {
+	Handle(w http.ResponseWriter, r *http.Request)
+	GetResponseInfo() map[string]string
+	GetType() string
 }
