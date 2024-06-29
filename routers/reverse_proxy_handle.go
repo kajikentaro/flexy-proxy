@@ -40,7 +40,12 @@ func (c *ReverseProxyHandle) Handle(w http.ResponseWriter, r *http.Request) {
 		},
 		Transport: t,
 	}
-	proxy.ServeHTTP(w, r)
+
+	rr := r.Clone(r.Context())
+	// NOTE:
+	// we should update host manually; otherwise, the original host remains
+	rr.Host = c.forwardUrl.Host
+	proxy.ServeHTTP(w, rr)
 
 	if c.contentType != "" {
 		// only if the contentType is specified, overwrite
