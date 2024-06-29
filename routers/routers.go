@@ -52,14 +52,14 @@ func parse(rawRoutes []models.Route) ([]route, error) {
 func validate(routes []route) error {
 	for _, r := range routes {
 		if r.parsedUrl.Scheme != "http" && r.parsedUrl.Scheme != "https" {
-			return NewValidationError(fmt.Sprintf("scheme of '%s' must be either 'http' or 'https'", r.Url), nil)
+			return NewValidationError(fmt.Sprintf("scheme of '%s' must be either 'http' or 'https'", r.Url))
 		}
 
 		response := r.Response
 		if response.File == "" &&
 			response.Content == "" &&
 			response.Url == nil {
-			return NewValidationError("None of File, Content, or Url is not specified", nil)
+			return NewValidationError("none of File, Content, or Url is not specified")
 		}
 	}
 

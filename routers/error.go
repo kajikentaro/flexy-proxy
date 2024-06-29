@@ -1,23 +1,12 @@
 package routers
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
-type ValidationError struct {
-	message string
-	cause   error
-}
+var ErrValidation = errors.New("validation error")
 
-func (e *ValidationError) Error() string {
-	return fmt.Sprintf("validation error: %s", e.message)
-}
-
-func (e *ValidationError) Unwrap() error {
-	return e.cause
-}
-
-func NewValidationError(msg string, cause error) *ValidationError {
-	return &ValidationError{
-		message: msg,
-		cause:   cause,
-	}
+func NewValidationError(detailMsg string) error {
+	return fmt.Errorf("%w: %s", ErrValidation, detailMsg)
 }
