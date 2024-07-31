@@ -9,20 +9,16 @@ import (
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewReverseProxyHandler(statusCode int, contentType string, forwardUrl *url.URL, proxyUrl *url.URL) models.Handler {
+func NewReverseProxyHandler(forwardUrl *url.URL, proxyUrl *url.URL) models.Handler {
 	return &ReverseProxyHandle{
-		statusCode:  statusCode,
-		contentType: contentType,
-		forwardUrl:  forwardUrl,
-		proxyUrl:    proxyUrl,
+		forwardUrl: forwardUrl,
+		proxyUrl:   proxyUrl,
 	}
 }
 
 type ReverseProxyHandle struct {
-	forwardUrl  *url.URL
-	statusCode  int
-	contentType string
-	proxyUrl    *url.URL
+	forwardUrl *url.URL
+	proxyUrl   *url.URL
 }
 
 func (c *ReverseProxyHandle) Handle(w http.ResponseWriter, r *http.Request) {
@@ -46,16 +42,6 @@ func (c *ReverseProxyHandle) Handle(w http.ResponseWriter, r *http.Request) {
 	// we should update host manually; otherwise, the original host remains
 	rr.Host = c.forwardUrl.Host
 	proxy.ServeHTTP(w, rr)
-
-	if c.contentType != "" {
-		// only if the contentType is specified, overwrite
-		w.Header().Set("Content-Type", c.contentType)
-	}
-
-	if c.statusCode != 0 {
-		// only if the statusCode is specified, overwrite
-		w.WriteHeader(c.statusCode)
-	}
 }
 
 func (c *ReverseProxyHandle) GetType() string {

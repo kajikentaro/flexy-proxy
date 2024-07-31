@@ -87,32 +87,49 @@ type route struct {
 	*models.Route
 }
 
+func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, error) {
+	if route.Response.Content != "" {
+		h := NewContentHandler(route.Response.Content)
+		return h, nil
+	}
+
+	if route.Response.Url != nil {
+		newUrl, err := route.Response.Url.Replace(reqUrl)
+		if err != nil {
+			return nil, err
+		}
+		h := NewReverseProxyHandler(newUrl, route.proxyUrl)
+		return h, nil
+	}
+
+	if route.Response.File != "" {
+		h := NewFileHandler(route.Response.File)
+		return h, nil
+	}
+
+	// by default, return this
+	h := NewReverseProxyHandler(reqUrl, route.proxyUrl)
+	return h, nil
+}
+
 func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 	for _, route := range r.routes {
 		if !isUrlSame(reqUrl, route) {
 			continue
 		}
-		matchedUrl := route.Url
 
-		if route.Response.Content != "" {
-			h := NewContentHandler(route.Response.Status, route.Response.ContentType, route.Response.Content)
-			return h, matchedUrl, nil
+		handler, err := r.getMainHandler(route, reqUrl)
+		if err != nil {
+			return nil, "", err
 		}
 
-		if route.Response.Url != nil {
-			newUrl, err := route.Response.Url.Replace(reqUrl)
-			if err != nil {
-				return nil, matchedUrl, err
-			}
-			h := NewReverseProxyHandler(route.Response.Status, route.Response.ContentType, newUrl, route.proxyUrl)
-			return h, matchedUrl, nil
-		}
+		handler = NewHandleTemplate(
+			handler,
+			route.Response.ContentType,
+			route.Response.Status,
+		)
 
-		if route.Response.File != "" {
-			h := NewFileHandler(route.Response.Status, route.Response.ContentType, route.Response.File)
-			return h, matchedUrl, nil
-		}
-
+		return handler, route.Url, nil
 	}
 	return nil, "", models.ErrRouteNotFound
 }
