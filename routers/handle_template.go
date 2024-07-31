@@ -6,11 +6,12 @@ import (
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewHandleTemplate(handler models.Handler, contentType string, statusCode int) models.Handler {
+func NewHandleTemplate(handler models.Handler, contentType string, statusCode int, headers map[string]string) models.Handler {
 	return &HandleTemplate{
 		handler:     handler,
 		contentType: contentType,
 		statusCode:  statusCode,
+		headers:     headers,
 	}
 }
 
@@ -18,6 +19,7 @@ type HandleTemplate struct {
 	handler     models.Handler
 	statusCode  int
 	contentType string
+	headers     map[string]string
 }
 
 func (h *HandleTemplate) Handle(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +33,10 @@ func (h *HandleTemplate) Handle(w http.ResponseWriter, r *http.Request) {
 	if h.statusCode != 0 {
 		// only if the statusCode is specified, overwrite
 		w.WriteHeader(h.statusCode)
+	}
+
+	for v, k := range h.headers {
+		w.Header().Set(v, k)
 	}
 }
 

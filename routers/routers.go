@@ -127,6 +127,7 @@ func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 			handler,
 			route.Response.ContentType,
 			route.Response.Status,
+			route.Response.Headers,
 		)
 
 		return handler, route.Url, nil

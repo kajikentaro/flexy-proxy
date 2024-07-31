@@ -35,6 +35,7 @@ type Route struct {
 
 		ContentType string `yaml:"content_type"`
 		Status      int
+		Headers     map[string]string
 	}
 }
 

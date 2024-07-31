@@ -3,6 +3,8 @@ routes:
   - url: "https://content.test"
     response:
       content: "basic"
+      headers:
+        "Access-Control-Allow-Origin": "*"
   - url: "https://content.test?foo=bar#12"
     response:
       content: "with url queries"

@@ -66,6 +66,11 @@ func TestRequestOnConfigUrl(t *testing.T) {
 			}
 			assert.Equal(t, expectedStatusCode, res.StatusCode)
 
+			for k, v := range c.Response.Headers {
+				val := res.Header.Get(k)
+				assert.Equal(t, v, val)
+			}
+
 			if c.Response.Content != "" {
 				assert.NoError(t, err)
 				assert.Equal(t, c.Response.Content, string(body))
