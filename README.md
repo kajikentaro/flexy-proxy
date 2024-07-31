@@ -52,13 +52,14 @@ Define routing settings. Each route is defined in the following format:
 
 Either a URL, file, or content must be specified.
 
-| Key            | Type   | Description                                           | Example                        |
-| -------------- | ------ | ----------------------------------------------------- | ------------------------------ |
-| `url`          | object | URL response settings. See below for detailed format. | See below                      |
-| `content`      | string | The content to return.                                | `This is the response content` |
-| `file`         | string | The file path to return.                              | `/path/to/file`                |
-| `status_code`  | int    | The HTTP status code.                                 | `404`                          |
-| `content_type` | string | The MIME type of the content.                         | `text/plain`                   |
+| Key            | Type   | Description                                           | Example                              |
+| -------------- | ------ | ----------------------------------------------------- | ------------------------------------ |
+| `url`          | object | URL response settings. See below for detailed format. | See below                            |
+| `content`      | string | The content to return.                                | `This is the response content`       |
+| `file`         | string | The file path to return.                              | `/path/to/file`                      |
+| `status_code`  | int    | The HTTP status code.                                 | `404`                                |
+| `content_type` | string | The MIME type of the content.                         | `text/plain`                         |
+| `headers`      | map    | The additional headers to include in the response.    | `"Access-Control-Allow-Origin": "*"` |
 
 ##### `URL`
 
@@ -114,4 +115,12 @@ routes:
         to: "https://example.com/api"
         regex: false
         proxy_url: "http://proxy.example.com"
+  # if the request url is \"https://content.test\",
+  # return the content \"basic\" with a custom header.
+  - url: \"https://content.test\"
+    regex: false
+    response:
+      content: \"basic\"
+      headers:
+        "Access-Control-Allow-Origin": "*"
 ```
