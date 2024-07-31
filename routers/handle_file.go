@@ -6,7 +6,7 @@ import (
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewFileHandler(filePath string) models.Handler {
+func NewHandleFile(filePath string) models.Handler {
 	return &FileHandle{
 		filePath: filePath,
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewContentHandler(body string) models.Handler {
+func NewHandleContent(body string) models.Handler {
 	return &ContentHandle{
 		body: body,
 	}

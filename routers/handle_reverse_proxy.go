@@ -9,7 +9,7 @@ import (
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewReverseProxyHandler(forwardUrl *url.URL, proxyUrl *url.URL) models.Handler {
+func NewHandleReverseProxy(forwardUrl *url.URL, proxyUrl *url.URL) models.Handler {
 	return &ReverseProxyHandle{
 		forwardUrl: forwardUrl,
 		proxyUrl:   proxyUrl,

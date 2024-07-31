@@ -89,7 +89,7 @@ type route struct {
 
 func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, error) {
 	if route.Response.Content != "" {
-		h := NewContentHandler(route.Response.Content)
+		h := NewHandleContent(route.Response.Content)
 		return h, nil
 	}
 
@@ -98,17 +98,17 @@ func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, e
 		if err != nil {
 			return nil, err
 		}
-		h := NewReverseProxyHandler(newUrl, route.proxyUrl)
+		h := NewHandleReverseProxy(newUrl, route.proxyUrl)
 		return h, nil
 	}
 
 	if route.Response.File != "" {
-		h := NewFileHandler(route.Response.File)
+		h := NewHandleFile(route.Response.File)
 		return h, nil
 	}
 
 	// by default, return this
-	h := NewReverseProxyHandler(reqUrl, route.proxyUrl)
+	h := NewHandleReverseProxy(reqUrl, route.proxyUrl)
 	return h, nil
 }
 
