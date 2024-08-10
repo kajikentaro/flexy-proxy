@@ -56,8 +56,8 @@ func validate(routes []route) error {
 		}
 
 		response := r.Response
-		if response.File == "" &&
-			response.Content == "" &&
+		if response.File == nil &&
+			response.Content == nil &&
 			response.Url == nil {
 			return NewValidationError("none of File, Content, or Url is not specified")
 		}
@@ -88,8 +88,8 @@ type route struct {
 }
 
 func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, error) {
-	if route.Response.Content != "" {
-		h := NewHandleContent(route.Response.Content)
+	if route.Response.Content != nil {
+		h := NewHandleContent(*route.Response.Content)
 		return h, nil
 	}
 
@@ -102,8 +102,8 @@ func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, e
 		return h, nil
 	}
 
-	if route.Response.File != "" {
-		h := NewHandleFile(route.Response.File)
+	if route.Response.File != nil {
+		h := NewHandleFile(*route.Response.File)
 		return h, nil
 	}
 

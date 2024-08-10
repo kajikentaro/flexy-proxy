@@ -30,8 +30,8 @@ type Route struct {
 	Regex    bool
 	Response struct {
 		Url     *replace.Url
-		Content string
-		File    string
+		Content *string
+		File    *string
 
 		ContentType string `yaml:"content_type"`
 		Status      int

@@ -52,8 +52,8 @@ func TestRequestOnConfigUrl(t *testing.T) {
 			body, err := io.ReadAll(res.Body)
 
 			expectedContentType := "text/plain"
-			if c.Response.File != "" {
-				expectedContentType = mime.TypeByExtension(filepath.Ext(c.Response.File))
+			if c.Response.File != nil {
+				expectedContentType = mime.TypeByExtension(filepath.Ext(*c.Response.File))
 			}
 			if c.Response.ContentType != "" {
 				expectedContentType = c.Response.ContentType
@@ -71,11 +71,11 @@ func TestRequestOnConfigUrl(t *testing.T) {
 				assert.Equal(t, v, val)
 			}
 
-			if c.Response.Content != "" {
+			if c.Response.Content != nil {
 				assert.NoError(t, err)
-				assert.Equal(t, c.Response.Content, string(body))
-			} else if c.Response.File != "" {
-				b, err := os.ReadFile(c.Response.File)
+				assert.Equal(t, *c.Response.Content, string(body))
+			} else if c.Response.File != nil {
+				b, err := os.ReadFile(*c.Response.File)
 				assert.NoError(t, err)
 				assert.Equal(t, b, body)
 			} else if c.Response.Url != nil {
