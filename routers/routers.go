@@ -54,13 +54,6 @@ func validate(routes []route) error {
 		if r.parsedUrl.Scheme != "http" && r.parsedUrl.Scheme != "https" {
 			return NewValidationError(fmt.Sprintf("scheme of '%s' must be either 'http' or 'https'", r.Url))
 		}
-
-		response := r.Response
-		if response.File == nil &&
-			response.Content == nil &&
-			response.Url == nil {
-			return NewValidationError("none of File, Content, or Url is not specified")
-		}
 	}
 
 	return nil

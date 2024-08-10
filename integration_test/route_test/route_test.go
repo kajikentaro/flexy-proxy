@@ -74,15 +74,20 @@ func TestRequestOnConfigUrl(t *testing.T) {
 			if c.Response.Content != nil {
 				assert.NoError(t, err)
 				assert.Equal(t, *c.Response.Content, string(body))
-			} else if c.Response.File != nil {
+				return
+			}
+			if c.Response.File != nil {
 				b, err := os.ReadFile(*c.Response.File)
 				assert.NoError(t, err)
 				assert.Equal(t, b, body)
-			} else if c.Response.Url != nil {
-				assert.Equal(t, "hello world", string(body))
-			} else {
-				t.Error("invalid config format")
+				return
 			}
+			if c.Response.Url != nil {
+				assert.Equal(t, "hello world", string(body))
+				return
+			}
+
+			assert.Equal(t, "hello world", string(body))
 		})
 	}
 }
