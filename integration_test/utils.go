@@ -23,8 +23,8 @@ func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Log
 		fmt.Fprintf(w, r.URL.Path)
 	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "text/plain")
-		fmt.Fprintf(w, "hello world")
+		w.Header().Add("Content-Type", "text/csv")
+		fmt.Fprintf(w, "hello,world")
 	})
 
 	srv := &http.Server{

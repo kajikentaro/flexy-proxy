@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mime"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 
 	test_utils "github.com/kajikentaro/elastic-proxy/integration_test"
 	"github.com/kajikentaro/elastic-proxy/loggers"
+	"github.com/kajikentaro/elastic-proxy/models"
 	"github.com/kajikentaro/elastic-proxy/utils"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +21,9 @@ import (
 
 var PROXY_PORT_NUMBER = 8081
 var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
-var PROXY_URL = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER)
+var PROXY_URL, _ = url.Parse(
+	fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER),
+)
 
 var SAMPLE_SERVER_PORT_NUMBER = 8082
 var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
@@ -44,80 +48,93 @@ func TestRequestOnConfigUrl(t *testing.T) {
 
 	for idx, c := range config.Routes {
 		t.Run(fmt.Sprintf("index: %d, route: %s", idx, c.Url), func(t *testing.T) {
-			proxyUrl, err := url.Parse(PROXY_URL)
-			assert.NoError(t, err)
-			res, err := test_utils.Request(proxyUrl, c.Url)
+			res, err := test_utils.Request(PROXY_URL, c.Url)
 			assert.NoError(t, err)
 			defer res.Body.Close()
+
 			body, err := io.ReadAll(res.Body)
+			assert.NoError(t, err)
 
-			expectedContentType := "text/plain"
-			if c.Response.File != nil {
-				expectedContentType = mime.TypeByExtension(filepath.Ext(*c.Response.File))
-			}
-			if c.Response.ContentType != "" {
-				expectedContentType = c.Response.ContentType
-			}
-			assert.Equal(t, expectedContentType, res.Header.Get("Content-Type"))
-
-			expectedStatusCode := 200
-			if c.Response.Status != 0 {
-				expectedStatusCode = c.Response.Status
-			}
-			assert.Equal(t, expectedStatusCode, res.StatusCode)
-
-			for k, v := range c.Response.Headers {
-				val := res.Header.Get(k)
-				assert.Equal(t, v, val)
-			}
-
+			assertCommon(t, c, res)
 			if c.Response.Content != nil {
-				assert.NoError(t, err)
-				assert.Equal(t, *c.Response.Content, string(body))
+				assertContent(t, c, res, body)
 				return
 			}
 			if c.Response.File != nil {
-				b, err := os.ReadFile(*c.Response.File)
-				assert.NoError(t, err)
-				assert.Equal(t, b, body)
+				assertFile(t, c, res, body)
 				return
 			}
 			if c.Response.Url != nil {
-				assert.Equal(t, "hello world", string(body))
+				assertUrl(t, c, res, body)
 				return
 			}
 
-			assert.Equal(t, "hello world", string(body))
+			assertUrl(t, c, res, body)
 		})
 	}
 }
 
-/*
-func TestRequestOnOtherUrl(t *testing.T) {
-	config, err := utils.ParseConfig("")
-	assert.NoError(t, err)
+func assertCommon(t *testing.T, conf models.Route, res *http.Response) {
+	// check content type
+	if conf.Response.ContentType != "" {
+		expectedContentType := conf.Response.ContentType
+		assert.Equal(t, expectedContentType, res.Header.Get("Content-Type"))
+	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config, loggers.GenLogger())
-	defer cancel()
+	// check status code
+	if conf.Response.Status != 0 {
+		expectedStatusCode := conf.Response.Status
+		assert.Equal(t, expectedStatusCode, res.StatusCode)
+	}
 
-	// 2nd proxy which is used if a request url does not match urls on config file
-	p := default_proxy.GetProxy()
-	srv := &http.Server{Addr: ":8082", Handler: p}
-	go test_utils.StartServer(srv)
-	// wait for starting the server
-	time.Sleep(time.Second)
-	defer test_utils.StopServer(srv)
-
-	proxyUrl, err := url.Parse(PROXY_URL)
-	assert.NoError(t, err)
-	res, err := test_utils.Request(proxyUrl, "https://default-proxy.jp/")
-	assert.NoError(t, err)
-	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
-	assert.NoError(t, err)
-
-	assert.Equal(t, "1,2,3", string(body))
+	// check custom header
+	for key, expected := range conf.Response.Headers {
+		actual := res.Header.Get(key)
+		assert.Equal(t, expected, actual)
+	}
 }
 
-*/
+func assertFile(t *testing.T, conf models.Route, res *http.Response, body []byte) {
+	// check content type set by the handler
+	if conf.Response.ContentType == "" {
+		expectedContentType := mime.TypeByExtension(filepath.Ext(*conf.Response.File))
+		assert.Equal(t, expectedContentType, res.Header.Get("Content-Type"))
+	}
+
+	// check status code set by the handler
+	if conf.Response.Status == 0 {
+		assert.Equal(t, 200, res.StatusCode)
+	}
+
+	b, err := os.ReadFile(*conf.Response.File)
+	assert.NoError(t, err)
+	assert.Equal(t, b, body)
+}
+
+func assertContent(t *testing.T, conf models.Route, res *http.Response, body []byte) {
+	// check content type set by the handler
+	if conf.Response.ContentType == "" {
+		assert.Equal(t, "text/plain", res.Header.Get("Content-Type"))
+	}
+
+	// check status code set by the handler
+	if conf.Response.Status == 0 {
+		assert.Equal(t, 200, res.StatusCode)
+	}
+
+	assert.Equal(t, *conf.Response.Content, string(body))
+}
+
+func assertUrl(t *testing.T, conf models.Route, res *http.Response, body []byte) {
+	// check content type set by the handler
+	if conf.Response.ContentType == "" {
+		assert.Equal(t, "text/csv", res.Header.Get("Content-Type"))
+	}
+
+	// check status code set by the handler
+	if conf.Response.Status == 0 {
+		assert.Equal(t, 200, res.StatusCode)
+	}
+
+	assert.Equal(t, "hello,world", string(body))
+}
