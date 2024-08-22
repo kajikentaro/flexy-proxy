@@ -65,7 +65,7 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 
 	p.logger.Info("request matched a route", args...)
 	handler.Handle(resWriter, req)
-	return req, resWriter.res
+	return req, resWriter.Response
 }
 
 type Proxy struct {
