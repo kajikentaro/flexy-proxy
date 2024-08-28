@@ -21,7 +21,7 @@ type ReverseProxyHandle struct {
 	proxyUrl   *url.URL
 }
 
-func (c *ReverseProxyHandle) Handle(w http.ResponseWriter, r *http.Request) {
+func (c *ReverseProxyHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	if c.proxyUrl != nil {

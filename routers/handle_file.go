@@ -16,7 +16,7 @@ type FileHandle struct {
 	filePath string
 }
 
-func (c *FileHandle) Handle(w http.ResponseWriter, r *http.Request) {
+func (c *FileHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, c.filePath)
 }
 

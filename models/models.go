@@ -40,7 +40,7 @@ type Route struct {
 }
 
 type Handler interface {
-	Handle(w http.ResponseWriter, r *http.Request)
+	http.Handler
 	GetResponseInfo() map[string]string
 	GetType() string
 }

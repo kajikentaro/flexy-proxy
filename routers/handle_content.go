@@ -16,7 +16,7 @@ type ContentHandle struct {
 	body string
 }
 
-func (c *ContentHandle) Handle(w http.ResponseWriter, r *http.Request) {
+func (c *ContentHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(c.body))
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "text/plain")

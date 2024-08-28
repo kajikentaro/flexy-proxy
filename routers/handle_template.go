@@ -22,8 +22,8 @@ type HandleTemplate struct {
 	headers     map[string]string
 }
 
-func (h *HandleTemplate) Handle(w http.ResponseWriter, r *http.Request) {
-	h.handler.Handle(w, r)
+func (h *HandleTemplate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.handler.ServeHTTP(w, r)
 
 	if h.contentType != "" {
 		// only if the contentType is specified, overwrite
