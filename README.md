@@ -6,6 +6,7 @@ This tool is designed to configure a proxy to return customized responses for sp
   - **File**: Return any file stored on the storage.
   - **URL**: Reverse proxy the content of another URL.
   - **Content**: Directly return a string content as the response.
+  - **Transform**: Apply a transformation command to the response content.
 - **Regex Based Matching**:
   - Use regex to route URLs.
   - Dynamically change the reverse proxy destination using variables.
@@ -50,7 +51,7 @@ Define routing settings. Each route is defined in the following format:
 
 #### `response`
 
-Either a URL, file, or content must be specified.
+Either a URL, file, content, or transform must be specified.
 
 | Key            | Type   | Description                                           | Example                              |
 | -------------- | ------ | ----------------------------------------------------- | ------------------------------------ |
@@ -60,6 +61,7 @@ Either a URL, file, or content must be specified.
 | `status_code`  | int    | The HTTP status code.                                 | `404`                                |
 | `content_type` | string | The MIME type of the content.                         | `text/plain`                         |
 | `headers`      | map    | The additional headers to include in the response.    | `"Access-Control-Allow-Origin": "*"` |
+| `transform`    | string | The command to transform the response content.        | `sed -E 's/foo/bar/g'`               |
 
 ##### `URL`
 
@@ -123,4 +125,11 @@ routes:
       content: \"basic\"
       headers:
         "Access-Control-Allow-Origin": "*"
+  # if the request url is "https://content.test/",
+  # return the content "foo" transformed to "bar".
+  - url: "https://content.test/"
+    regex: false
+    response:
+      content: "foo"
+      transform: "sed -E 's/foo/bar/g'"
 ```

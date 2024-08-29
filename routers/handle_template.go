@@ -3,27 +3,35 @@ package routers
 import (
 	"net/http"
 
+	"github.com/kajikentaro/elastic-proxy/middlewares"
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
-func NewHandleTemplate(handler models.Handler, contentType string, statusCode int, headers map[string]string) models.Handler {
+func NewHandleTemplate(handler models.Handler, contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string) models.Handler {
 	return &HandleTemplate{
-		handler:     handler,
-		contentType: contentType,
-		statusCode:  statusCode,
-		headers:     headers,
+		handler:                handler,
+		contentType:            contentType,
+		statusCode:             statusCode,
+		headers:                headers,
+		parsedTransformCommand: parsedTransformCommand,
 	}
 }
 
 type HandleTemplate struct {
-	handler     models.Handler
-	statusCode  int
-	contentType string
-	headers     map[string]string
+	handler                models.Handler
+	statusCode             int
+	contentType            string
+	headers                map[string]string
+	parsedTransformCommand *[]string
 }
 
 func (h *HandleTemplate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h.handler.ServeHTTP(w, r)
+	if h.parsedTransformCommand == nil {
+		h.handler.ServeHTTP(w, r)
+	} else {
+		transform := middlewares.NewTransform(h.parsedTransformCommand)
+		transform.Middleware(h.handler).ServeHTTP(w, r)
+	}
 
 	if h.contentType != "" {
 		// only if the contentType is specified, overwrite

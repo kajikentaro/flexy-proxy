@@ -1,0 +1,21 @@
+routes:
+  - url: "https://content.test/"
+    # expected response is "bar"
+    response:
+      content: "foo"
+      transform: "sed -E 's/foo/bar/g'"
+
+  - url: "https://file.test/"
+    # expected response is "baz sample text"
+    response:
+      file: "sample.txt"
+      transform: |
+        bash -c "sed -E 's/foo/bar/g' | sed -E 's/bar/baz/g'"
+
+  - url: "https://url.test/"
+    response:
+      url: "http://localhost:8088/"
+      transform: "bash ./wc.sh"
+
+default_route:
+  deny_access: true

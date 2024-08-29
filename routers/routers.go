@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"regexp"
 
+	"github.com/google/shlex"
 	"github.com/kajikentaro/elastic-proxy/models"
 )
 
@@ -34,6 +35,14 @@ func parse(rawRoutes []models.Route) ([]route, error) {
 			return nil, err
 		}
 		newR.parsedUrl = parsedUrl
+
+		if inR.Response.Transform != "" {
+			parsedCommand, err := shlex.Split(inR.Response.Transform)
+			if err != nil {
+				return nil, err
+			}
+			newR.parsedTransformCommand = &parsedCommand
+		}
 
 		if inR.Response.Url != nil && inR.Response.Url.ProxyUrl != "" {
 			parsedProxyUrl, err := url.ParseRequestURI(inR.Response.Url.ProxyUrl)
@@ -78,6 +87,7 @@ type route struct {
 	regexUrl  *regexp.Regexp
 	proxyUrl  *url.URL
 	*models.Route
+	parsedTransformCommand *[]string
 }
 
 func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, error) {
@@ -121,6 +131,7 @@ func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 			route.Response.ContentType,
 			route.Response.Status,
 			route.Response.Headers,
+			route.parsedTransformCommand,
 		)
 
 		return handler, route.Url, nil
