@@ -1,22 +1,22 @@
-package replace_test
+package rewrite_test
 
 import (
 	"net/url"
 	"testing"
 
-	"github.com/kajikentaro/elastic-proxy/models/replace"
+	"github.com/kajikentaro/elastic-proxy/models/rewrite"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
 
 type DummyStruct struct {
-	Url replace.Url
+	Rewrite rewrite.Rewrite
 }
 
 func TestSingleString(t *testing.T) {
 	yamlData := `
-url: "http://target.url"
+rewrite: "http://target.url"
 `
 
 	var res DummyStruct
@@ -24,7 +24,7 @@ url: "http://target.url"
 	assert.NoError(t, err)
 
 	input, _ := url.ParseRequestURI("http://original.url")
-	actual, err := res.Url.Replace(input)
+	actual, err := res.Rewrite.Replace(input)
 	assert.NoError(t, err)
 	expected, _ := url.ParseRequestURI("http://target.url")
 
@@ -33,7 +33,7 @@ url: "http://target.url"
 
 func TestStringReplacement(t *testing.T) {
 	yamlData := `
-url:
+rewrite:
   from: 'original'
   to: 'replaced'
 `
@@ -43,7 +43,7 @@ url:
 	assert.NoError(t, err)
 
 	input, _ := url.ParseRequestURI("http://original.url")
-	actual, err := res.Url.Replace(input)
+	actual, err := res.Rewrite.Replace(input)
 	assert.NoError(t, err)
 	expected, _ := url.ParseRequestURI("http://replaced.url")
 
@@ -52,7 +52,7 @@ url:
 
 func TestRegexReplacement(t *testing.T) {
 	yamlData := `
-url:
+rewrite:
   from: 'http://(.*)\.url'
   to: 'http://$1-2.net'
   regex: true
@@ -63,7 +63,7 @@ url:
 	assert.NoError(t, err)
 
 	input, _ := url.ParseRequestURI("http://original.url")
-	actual, err := res.Url.Replace(input)
+	actual, err := res.Rewrite.Replace(input)
 	assert.NoError(t, err)
 	expected, _ := url.ParseRequestURI("http://original-2.net")
 

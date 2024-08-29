@@ -1,4 +1,4 @@
 default_route:
-  proxy_url: "http://localhost:8084"
+  proxy: "http://localhost:8084"
   deny_access: true
 always_mitm: false

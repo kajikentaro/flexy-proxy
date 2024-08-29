@@ -64,12 +64,12 @@ func TestRequestOnConfigUrl(t *testing.T) {
 				assertFile(t, c, res, body)
 				return
 			}
-			if c.Response.Url != nil {
-				assertUrl(t, c, res, body)
+			if c.Response.Rewrite != nil {
+				assertRewrite(t, c, res, body)
 				return
 			}
 
-			assertUrl(t, c, res, body)
+			assertRewrite(t, c, res, body)
 		})
 	}
 }
@@ -125,7 +125,7 @@ func assertContent(t *testing.T, conf models.Route, res *http.Response, body []b
 	assert.Equal(t, *conf.Response.Content, string(body))
 }
 
-func assertUrl(t *testing.T, conf models.Route, res *http.Response, body []byte) {
+func assertRewrite(t *testing.T, conf models.Route, res *http.Response, body []byte) {
 	// check content type set by the handler
 	if conf.Response.ContentType == "" {
 		assert.Equal(t, "text/csv", res.Header.Get("Content-Type"))

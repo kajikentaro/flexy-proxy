@@ -21,7 +21,10 @@ type Transform struct {
 func (t *Transform) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextResponse := &responseWriter{ResponseWriter: w}
+
+		// NOTE: if the response body is compressed, we can't use string replacement commands like 'sed'.
 		r.Header.Del("Accept-Encoding")
+
 		next.ServeHTTP(nextResponse, r)
 
 		cmd := exec.Command((*t.command)[0], (*t.command)[1:]...)

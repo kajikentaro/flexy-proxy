@@ -29,15 +29,15 @@ routes:
   # tests for response.url
   - url: "https://url.test"
     response:
-      url: "http://localhost:8082"
+      rewrite: "http://localhost:8082"
   - url: "https://dummy.test:8082"
     response:
-      url:
+      rewrite:
         from: https://dummy.test
         to: http://localhost
   - url: "http://http.test"
     response:
-      url: "http://localhost:8082"
+      rewrite: "http://localhost:8082"
   
   # tests for blank response
   - url: "http://localhost:8082/test1"

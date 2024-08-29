@@ -10,7 +10,7 @@ routes:
   - url: "http://localhost:8086/.*"
     regex: true
     response:
-      url:
+      rewrite:
         # v1.2 will be v1.2.1
         # i.e.
         # `path/v1.2-win64.zip` -> `path/v1.2.1-win64.zip`

@@ -1,4 +1,4 @@
-package replace
+package rewrite
 
 import (
 	"fmt"
@@ -47,24 +47,24 @@ There are 3 patters of input.
 	behavior:
 	Replace the input URL by using regex patterns
 */
-type Url struct {
-	SingleUrl string
-	UrlParts
+type Rewrite struct {
+	singleUrl string
+	advancedOptions
 }
 
-type UrlParts struct {
-	From     string
-	To       string
-	Regex    bool
-	ProxyUrl string `yaml:"proxy_url"`
+type advancedOptions struct {
+	From  string
+	To    string
+	Regex bool
+	Proxy string
 }
 
-func (u *Url) Replace(inputUrl *url.URL) (*url.URL, error) {
+func (u *Rewrite) Replace(inputUrl *url.URL) (*url.URL, error) {
 	// pattern #1
-	if u.SingleUrl != "" {
-		newUrl, err := url.ParseRequestURI(u.SingleUrl)
+	if u.singleUrl != "" {
+		newUrl, err := url.ParseRequestURI(u.singleUrl)
 		if err != nil {
-			return nil, NewUrlReplaceError(fmt.Sprintf("invalid url: %s", u.SingleUrl), err)
+			return nil, newUrlRewriteError(fmt.Sprintf("invalid url in 'rewrite': %s", u.singleUrl), err)
 		}
 		return newUrl, nil
 	}
@@ -75,7 +75,7 @@ func (u *Url) Replace(inputUrl *url.URL) (*url.URL, error) {
 		newStr := strings.Replace(inputStr, u.From, u.To, -1)
 		newUrl, err := url.ParseRequestURI(newStr)
 		if err != nil {
-			return nil, NewUrlReplaceError(fmt.Sprintf("failed to replace %s with %s in %s: the replaced URL is %s", u.From, u.To, inputStr, newStr), nil)
+			return nil, newUrlRewriteError(fmt.Sprintf("failed to replace %s with %s in %s: the replaced URL is %s", u.From, u.To, inputStr, newStr), nil)
 		}
 		return newUrl, nil
 	}
@@ -83,29 +83,29 @@ func (u *Url) Replace(inputUrl *url.URL) (*url.URL, error) {
 	// pattern #3
 	regex, err := regexp.Compile(u.From)
 	if err != nil {
-		return nil, NewUrlReplaceError("failed to compile regex", err)
+		return nil, newUrlRewriteError("failed to compile regex", err)
 	}
 
 	inputStr := inputUrl.String()
 	newStr := regex.ReplaceAllString(inputStr, u.To)
 	newUrl, err := url.ParseRequestURI(newStr)
 	if err != nil {
-		return nil, NewUrlReplaceError(fmt.Sprintf("failed to replace regex, %s, with %s in %s: the replaced URL is %s", u.From, u.To, inputStr, newStr), nil)
+		return nil, newUrlRewriteError(fmt.Sprintf("failed to replace regex, %s, with %s in %s: the replaced URL is %s", u.From, u.To, inputStr, newStr), nil)
 	}
 	return newUrl, nil
 }
 
-func (e *Url) UnmarshalYAML(value *yaml.Node) error {
+func (e *Rewrite) UnmarshalYAML(value *yaml.Node) error {
 	var str string
 	if err := value.Decode(&str); err == nil {
-		e.SingleUrl = str
+		e.singleUrl = str
 		return nil
 	}
 
-	var urlParts UrlParts
+	var urlParts advancedOptions
 	err := value.Decode(&urlParts)
 	if err == nil {
-		e.UrlParts = urlParts
+		e.advancedOptions = urlParts
 		return nil
 	}
 

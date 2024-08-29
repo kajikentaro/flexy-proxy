@@ -44,8 +44,8 @@ func parse(rawRoutes []models.Route) ([]route, error) {
 			newR.parsedTransformCommand = &parsedCommand
 		}
 
-		if inR.Response.Url != nil && inR.Response.Url.ProxyUrl != "" {
-			parsedProxyUrl, err := url.ParseRequestURI(inR.Response.Url.ProxyUrl)
+		if inR.Response.Rewrite != nil && inR.Response.Rewrite.Proxy != "" {
+			parsedProxyUrl, err := url.ParseRequestURI(inR.Response.Rewrite.Proxy)
 			if err != nil {
 				return nil, err
 			}
@@ -96,8 +96,8 @@ func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, e
 		return h, nil
 	}
 
-	if route.Response.Url != nil {
-		newUrl, err := route.Response.Url.Replace(reqUrl)
+	if route.Response.Rewrite != nil {
+		newUrl, err := route.Response.Rewrite.Replace(reqUrl)
 		if err != nil {
 			return nil, err
 		}

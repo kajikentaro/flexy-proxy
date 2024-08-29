@@ -14,7 +14,7 @@ routes:
 
   - url: "https://url.test/"
     response:
-      url: "http://localhost:8088/"
+      rewrite: "http://localhost:8088/"
       transform: "bash ./wc.sh"
 
 default_route:

@@ -80,7 +80,7 @@ func TestFile(t *testing.T) {
 	assert.Equal(t, "baz sample text", string(body))
 }
 
-func TestReverseProxy(t *testing.T) {
+func TestRewrite(t *testing.T) {
 	proxyUrl, err := url.Parse(PROXY_URL)
 	assert.NoError(t, err)
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kajikentaro/elastic-proxy/models/replace"
+	"github.com/kajikentaro/elastic-proxy/models/rewrite"
 )
 
 type RawConfig struct {
@@ -15,7 +15,7 @@ type RawConfig struct {
 }
 
 type DefaultRoute struct {
-	ProxyUrl   string `yaml:"proxy_url"`
+	ProxyUrl   string `yaml:"proxy"`
 	DenyAccess bool   `yaml:"deny_access"`
 }
 
@@ -29,7 +29,7 @@ type Route struct {
 	Url      string
 	Regex    bool
 	Response struct {
-		Url     *replace.Url
+		Rewrite *rewrite.Rewrite
 		Content *string
 		File    *string
 
