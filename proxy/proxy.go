@@ -75,8 +75,13 @@ type Proxy struct {
 }
 
 type Config struct {
-	DefaultRoute *models.DefaultRoute
+	DefaultRoute DefaultRoute
 	AlwaysMitm   bool
+}
+
+type DefaultRoute struct {
+	Proxy      *url.URL
+	DenyAccess bool `yaml:"deny_access"`
 }
 
 func SetupProxy(router models.Router, logger *loggers.Logger, config *Config) *goproxy.ProxyHttpServer {
@@ -107,16 +112,16 @@ func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
 		proxy.OnRequest().HandleConnect(goproxy.AlwaysReject)
 	}
 
-	if proxyUrl := p.config.DefaultRoute.ProxyUrl; proxyUrl != "" {
+	if p.config.DefaultRoute.Proxy != nil {
 		// proxy which is used when "AlwaysMitm" hits
 		proxy.Tr = &http.Transport{
 			Proxy: func(req *http.Request) (*url.URL, error) {
-				return url.Parse(proxyUrl)
+				return p.config.DefaultRoute.Proxy, nil
 			},
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 		// proxy which is used when "AlwaysMitm" doesn't hits
-		proxy.ConnectDial = proxy.NewConnectDialToProxy(proxyUrl)
+		proxy.ConnectDial = proxy.NewConnectDialToProxy(p.config.DefaultRoute.Proxy.String())
 	}
 
 	return proxy

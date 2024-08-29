@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -24,7 +25,7 @@ func getConfigPath(customPath string) (string, error) {
 var DEFAULT_CONFIG = models.RawConfig{
 	AlwaysMitm: true,
 	LogLevel:   "INFO",
-	DefaultRoute: models.DefaultRoute{
+	DefaultRoute: models.RawDefaultRoute{
 		DenyAccess: false,
 	},
 }
@@ -49,14 +50,23 @@ func ReadConfigYaml(customPath string) (*models.RawConfig, error) {
 }
 
 func ParseConfig(rawConfig *models.RawConfig) (models.Router, *loggers.Logger, *proxy.Config, error) {
-	router, err := routers.GenRouter(rawConfig.Routes)
+	var defaultProxy *url.URL
+	if rawConfig.DefaultRoute.Proxy != "" {
+		var err error
+		defaultProxy, err = url.Parse(rawConfig.DefaultRoute.Proxy)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	}
+
+	router, err := routers.GenRouter(rawConfig.Routes, defaultProxy)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	proxyConfig := &proxy.Config{
-		DefaultRoute: &models.DefaultRoute{
-			ProxyUrl:   rawConfig.DefaultRoute.ProxyUrl,
+		DefaultRoute: proxy.DefaultRoute{
+			Proxy:      defaultProxy,
 			DenyAccess: rawConfig.DefaultRoute.DenyAccess,
 		},
 		AlwaysMitm: rawConfig.AlwaysMitm,

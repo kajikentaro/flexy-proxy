@@ -1,0 +1,20 @@
+routes:
+  - url: "https://overwrite-proxy.test/"
+    response:
+      rewrite:
+        from: ".*"
+        to: "https://default-proxy.jp/"
+        regex: true
+        proxy: "http://localhost:8084"
+
+  - url: "https://remove-proxy.test/"
+    response:
+      rewrite:
+        from: ".*"
+        to: "http://localhost:8089"
+        regex: true
+        proxy: "" # remove the default proxy
+
+default_route:
+  deny_access: true
+  proxy: "http://unavailable-proxy.test"

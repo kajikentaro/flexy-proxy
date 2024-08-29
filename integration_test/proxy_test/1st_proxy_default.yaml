@@ -1,2 +1,10 @@
 default_route:
   proxy: "http://localhost:8084"
+
+routes:
+  - url: "https://on-route.test/"
+    response:
+      rewrite:
+        from: ".*"
+        to: "https://default-proxy.jp/"
+        regex: true

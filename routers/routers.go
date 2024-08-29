@@ -13,7 +13,7 @@ type router struct {
 	routes []route
 }
 
-func parse(rawRoutes []models.Route) ([]route, error) {
+func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]route, error) {
 	var routes []route
 
 	for _, inR := range rawRoutes {
@@ -44,12 +44,18 @@ func parse(rawRoutes []models.Route) ([]route, error) {
 			newR.parsedTransformCommand = &parsedCommand
 		}
 
-		if inR.Response.Rewrite != nil && inR.Response.Rewrite.Proxy != "" {
-			parsedProxyUrl, err := url.ParseRequestURI(inR.Response.Rewrite.Proxy)
-			if err != nil {
-				return nil, err
+		if inR.Response.Rewrite != nil {
+			if inR.Response.Rewrite.Proxy == nil {
+				newR.proxyUrl = defaultProxy
+			} else if *inR.Response.Rewrite.Proxy == "" {
+				newR.proxyUrl = nil
+			} else {
+				parsedProxyUrl, err := url.ParseRequestURI(*inR.Response.Rewrite.Proxy)
+				if err != nil {
+					return nil, err
+				}
+				newR.proxyUrl = parsedProxyUrl
 			}
-			newR.proxyUrl = parsedProxyUrl
 		}
 
 		routes = append(routes, newR)
@@ -68,8 +74,8 @@ func validate(routes []route) error {
 	return nil
 }
 
-func GenRouter(routes []models.Route) (models.Router, error) {
-	parsedRoutes, err := parse(routes)
+func GenRouter(routes []models.Route, defaultProxy *url.URL) (models.Router, error) {
+	parsedRoutes, err := parse(routes, defaultProxy)
 	if err != nil {
 		return nil, err
 	}

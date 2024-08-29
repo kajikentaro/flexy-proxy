@@ -9,14 +9,14 @@ import (
 
 type RawConfig struct {
 	Routes       []Route
-	DefaultRoute DefaultRoute `yaml:"default_route"`
-	LogLevel     string       `yaml:"log_level"`
-	AlwaysMitm   bool         `yaml:"always_mitm"`
+	DefaultRoute RawDefaultRoute `yaml:"default_route"`
+	LogLevel     string          `yaml:"log_level"`
+	AlwaysMitm   bool            `yaml:"always_mitm"`
 }
 
-type DefaultRoute struct {
-	ProxyUrl   string `yaml:"proxy"`
-	DenyAccess bool   `yaml:"deny_access"`
+type RawDefaultRoute struct {
+	Proxy      string
+	DenyAccess bool `yaml:"deny_access"`
 }
 
 type Router interface {

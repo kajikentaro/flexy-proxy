@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	test_utils "github.com/kajikentaro/elastic-proxy/integration_test"
+	"github.com/kajikentaro/elastic-proxy/loggers"
 	"github.com/kajikentaro/elastic-proxy/utils"
 
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,9 @@ var PROXY_URL_1 = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER_1)
 
 var PROXY_PORT_NUMBER_2 = 8084
 var PROXY_HTTP_ADDRESS_2 = fmt.Sprintf(":%d", PROXY_PORT_NUMBER_2)
+
+var SAMPLE_SERVER_PORT_NUMBER = 8089
+var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
 
 func TestDefaultRoute(t *testing.T) {
 	// setup 1st proxy
@@ -42,15 +46,30 @@ func TestDefaultRoute(t *testing.T) {
 		defer cancel()
 	}
 
-	proxyUrl, err := url.Parse(PROXY_URL_1)
-	assert.NoError(t, err)
-	res, err := test_utils.Request(proxyUrl, "https://default-proxy.jp/")
-	assert.NoError(t, err)
-	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
-	assert.NoError(t, err)
+	{
+		// should use default proxy if the request is out of routes
+		proxyUrl, err := url.Parse(PROXY_URL_1)
+		assert.NoError(t, err)
+		res, err := test_utils.Request(proxyUrl, "https://default-proxy.jp/")
+		assert.NoError(t, err)
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
 
-	assert.Equal(t, "1,2,3", string(body))
+		assert.Equal(t, "1,2,3", string(body))
+	}
+	{
+		// should use default proxy if no additional proxy is specified
+		proxyUrl, err := url.Parse(PROXY_URL_1)
+		assert.NoError(t, err)
+		res, err := test_utils.Request(proxyUrl, "https://on-route.test")
+		assert.NoError(t, err)
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "1,2,3", string(body))
+	}
 }
 
 func TestRequestDenial(t *testing.T) {
@@ -146,5 +165,61 @@ func TestProxyOnEachRoutes(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, "1,2,3", string(body))
+	}
+}
+
+func TestOverwriteProxy(t *testing.T) {
+	// setup 1st proxy
+	{
+		config, err := utils.ReadConfigYaml("1st_proxy_overwrite_default.yaml")
+		assert.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config)
+		defer cancel()
+	}
+
+	// setup 2nd proxy
+	{
+		config, err := utils.ReadConfigYaml("2nd_proxy_default.yaml")
+		assert.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config)
+		defer cancel()
+	}
+
+	{
+		// sample http server
+		ctx, cancel := context.WithCancel(context.Background())
+		err := test_utils.StartSampleHttpServer(ctx, SAMPLE_SERVER_HTTP_ADDRESS, loggers.GenLogger(nil))
+		assert.NoError(t, err)
+		defer cancel()
+	}
+
+	{
+		// should overwrite the default proxy with another proxy
+		proxyUrl, err := url.Parse(PROXY_URL_1)
+		assert.NoError(t, err)
+		res, err := test_utils.Request(proxyUrl, "https://overwrite-proxy.test/")
+		assert.NoError(t, err)
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "1,2,3", string(body))
+	}
+
+	{
+		// should not use default proxy and access the internet directly
+		proxyUrl, err := url.Parse(PROXY_URL_1)
+		assert.NoError(t, err)
+		res, err := test_utils.Request(proxyUrl, "https://remove-proxy.test/")
+		assert.NoError(t, err)
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "hello,world", string(body))
 	}
 }

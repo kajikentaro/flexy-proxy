@@ -56,7 +56,7 @@ type advancedOptions struct {
 	From  string
 	To    string
 	Regex bool
-	Proxy string
+	Proxy *string
 }
 
 func (u *Rewrite) Replace(inputUrl *url.URL) (*url.URL, error) {
