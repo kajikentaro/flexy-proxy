@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	test_utils "github.com/kajikentaro/elastic-proxy/integration_test"
-	"github.com/kajikentaro/elastic-proxy/loggers"
 	"github.com/kajikentaro/elastic-proxy/utils"
 
 	"github.com/stretchr/testify/assert"
@@ -25,21 +24,21 @@ func TestDefaultRoute(t *testing.T) {
 	// setup 1st proxy
 	// if a request url does not match urls on config file, it goes 2nd proxy
 	{
-		config, err := utils.ParseConfig("1st_proxy_default.yaml")
+		config, err := utils.ReadConfigYaml("1st_proxy_default.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config, loggers.GenLogger(nil))
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config)
 		defer cancel()
 	}
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ParseConfig("2nd_proxy_default.yaml")
+		config, err := utils.ReadConfigYaml("2nd_proxy_default.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config, loggers.GenLogger(nil))
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config)
 		defer cancel()
 	}
 
@@ -58,21 +57,21 @@ func TestRequestDenial(t *testing.T) {
 	// setup 1st proxy
 	// if a request url does not match urls on config file, it goes 2nd proxy
 	{
-		config, err := utils.ParseConfig("1st_proxy_deny.yaml")
+		config, err := utils.ReadConfigYaml("1st_proxy_deny.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config, loggers.GenLogger(nil))
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config)
 		defer cancel()
 	}
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ParseConfig("2nd_proxy_default.yaml")
+		config, err := utils.ReadConfigYaml("2nd_proxy_default.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config, loggers.GenLogger(nil))
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config)
 		defer cancel()
 	}
 
@@ -108,21 +107,21 @@ func TestProxyOnEachRoutes(t *testing.T) {
 	// setup 1st proxy
 	// if a request url match, it goes 2nd proxy
 	{
-		config, err := utils.ParseConfig("1st_proxy_on_routes.yaml")
+		config, err := utils.ReadConfigYaml("1st_proxy_on_routes.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config, loggers.GenLogger(nil))
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, config)
 		defer cancel()
 	}
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ParseConfig("2nd_proxy_default.yaml")
+		config, err := utils.ReadConfigYaml("2nd_proxy_default.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config, loggers.GenLogger(nil))
+		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, config)
 		defer cancel()
 	}
 

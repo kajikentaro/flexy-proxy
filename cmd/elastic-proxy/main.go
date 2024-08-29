@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kajikentaro/elastic-proxy/loggers"
 	"github.com/kajikentaro/elastic-proxy/proxy"
-	"github.com/kajikentaro/elastic-proxy/routers"
 	"github.com/kajikentaro/elastic-proxy/utils"
 )
 
@@ -25,29 +23,17 @@ func main() {
 	flag.IntVar(&portNum, "p", 8888, "Port number")
 	flag.Parse()
 
-	config, err := utils.ParseConfig(customConfigPath)
+	config, err := utils.ReadConfigYaml(customConfigPath)
 	if err != nil {
 		fatalf("Error parsing config: %v", err)
 	}
 
-	logLevelStr := "INFO"
-	if config.LogLevel != "" {
-		logLevelStr = config.LogLevel
-	}
-	logLevel, err := loggers.StrToLogLevel(logLevelStr)
-	if err != nil {
-		fatalf("%v", err)
-	}
-	logger := loggers.GenLogger(&loggers.LoggerSettings{
-		LogLevel: logLevel,
-	})
-
-	router, err := routers.GenRouter(config.Routes)
+	router, logger, proxyConfig, err := utils.ParseConfig(config)
 	if err != nil {
 		fatalf("%v", err)
 	}
 
-	proxy := proxy.SetupProxy(router, logger, utils.GetProxyConfig(config))
+	proxy := proxy.SetupProxy(router, logger, proxyConfig)
 	addr := fmt.Sprintf(":%d", portNum)
 	logger.Info(fmt.Sprintf("Proxy started on %s", addr))
 	fatalf("%v", http.ListenAndServe(addr, proxy))

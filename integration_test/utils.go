@@ -12,7 +12,6 @@ import (
 	"github.com/kajikentaro/elastic-proxy/loggers"
 	"github.com/kajikentaro/elastic-proxy/models"
 	"github.com/kajikentaro/elastic-proxy/proxy"
-	"github.com/kajikentaro/elastic-proxy/routers"
 	"github.com/kajikentaro/elastic-proxy/utils"
 )
 
@@ -54,13 +53,13 @@ func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Log
 	return nil
 }
 
-func StartProxyServer(ctx context.Context, proxyAddr string, config *models.RawConfig, logger *loggers.Logger) error {
-	router, err := routers.GenRouter(config.Routes)
+func StartProxyServer(ctx context.Context, proxyAddr string, config *models.RawConfig) error {
+	router, logger, proxyConfig, err := utils.ParseConfig(config)
 	if err != nil {
 		return err
 	}
 
-	proxy := proxy.SetupProxy(router, logger, utils.GetProxyConfig(config))
+	proxy := proxy.SetupProxy(router, logger, proxyConfig)
 
 	srv := &http.Server{Addr: proxyAddr, Handler: proxy}
 

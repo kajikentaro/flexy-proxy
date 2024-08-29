@@ -4,8 +4,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kajikentaro/elastic-proxy/loggers"
 	"github.com/kajikentaro/elastic-proxy/models"
 	"github.com/kajikentaro/elastic-proxy/proxy"
+	"github.com/kajikentaro/elastic-proxy/routers"
 
 	"gopkg.in/yaml.v3"
 )
@@ -27,7 +29,7 @@ var DEFAULT_CONFIG = models.RawConfig{
 	},
 }
 
-func ParseConfig(customPath string) (*models.RawConfig, error) {
+func ReadConfigYaml(customPath string) (*models.RawConfig, error) {
 	configPath, err := getConfigPath(customPath)
 	if err != nil {
 		return nil, err
@@ -46,9 +48,31 @@ func ParseConfig(customPath string) (*models.RawConfig, error) {
 	return &config, nil
 }
 
-func GetProxyConfig(rawConfig *models.RawConfig) *proxy.Config {
-	return &proxy.Config{
-		DefaultRoute: &rawConfig.DefaultRoute,
-		AlwaysMitm:   rawConfig.AlwaysMitm,
+func ParseConfig(rawConfig *models.RawConfig) (models.Router, *loggers.Logger, *proxy.Config, error) {
+	router, err := routers.GenRouter(rawConfig.Routes)
+	if err != nil {
+		return nil, nil, nil, err
 	}
+
+	proxyConfig := &proxy.Config{
+		DefaultRoute: &models.DefaultRoute{
+			ProxyUrl:   rawConfig.DefaultRoute.ProxyUrl,
+			DenyAccess: rawConfig.DefaultRoute.DenyAccess,
+		},
+		AlwaysMitm: rawConfig.AlwaysMitm,
+	}
+
+	logLevelStr := "INFO"
+	if rawConfig.LogLevel != "" {
+		logLevelStr = rawConfig.LogLevel
+	}
+	logLevel, err := loggers.StrToLogLevel(logLevelStr)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	logger := loggers.GenLogger(&loggers.LoggerSettings{
+		LogLevel: logLevel,
+	})
+
+	return router, logger, proxyConfig, nil
 }

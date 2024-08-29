@@ -28,7 +28,7 @@ func fatalln(a ...any) {
 }
 
 func TestMain(m *testing.M) {
-	config, err := utils.ParseConfig("transform_test.yaml")
+	config, err := utils.ReadConfigYaml("transform_test.yaml")
 	if err != nil {
 		fatalln("failed to parse config:", err)
 	}
@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	{
 		// create a proxy server
 		ctx, cancel := context.WithCancel(context.Background())
-		err = test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config, loggers.GenLogger(nil))
+		err = test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config)
 		if err != nil {
 			fatalln("failed to start a proxy server:", err)
 		}
