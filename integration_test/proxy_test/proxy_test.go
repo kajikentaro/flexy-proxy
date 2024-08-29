@@ -21,11 +21,11 @@ var PROXY_URL_1 = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER_1)
 var PROXY_PORT_NUMBER_2 = 8084
 var PROXY_HTTP_ADDRESS_2 = fmt.Sprintf(":%d", PROXY_PORT_NUMBER_2)
 
-func TestRequestOnOtherUrl(t *testing.T) {
+func TestDefaultRoute(t *testing.T) {
 	// setup 1st proxy
 	// if a request url does not match urls on config file, it goes 2nd proxy
 	{
-		config, err := utils.ParseConfig("1st_proxy.yaml")
+		config, err := utils.ParseConfig("1st_proxy_default.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -35,7 +35,7 @@ func TestRequestOnOtherUrl(t *testing.T) {
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ParseConfig("2nd_proxy.yaml")
+		config, err := utils.ParseConfig("2nd_proxy_default.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -68,7 +68,7 @@ func TestRequestDenial(t *testing.T) {
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ParseConfig("2nd_proxy.yaml")
+		config, err := utils.ParseConfig("2nd_proxy_default.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -104,7 +104,7 @@ func TestRequestDenial(t *testing.T) {
 	}
 }
 
-func TestProxyUrlOnRoutes(t *testing.T) {
+func TestProxyOnEachRoutes(t *testing.T) {
 	// setup 1st proxy
 	// if a request url match, it goes 2nd proxy
 	{
@@ -118,7 +118,7 @@ func TestProxyUrlOnRoutes(t *testing.T) {
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ParseConfig("2nd_proxy.yaml")
+		config, err := utils.ParseConfig("2nd_proxy_default.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
