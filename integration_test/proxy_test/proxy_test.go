@@ -71,6 +71,18 @@ func TestDefaultRoute(t *testing.T) {
 
 		assert.Equal(t, "1,2,3", string(body))
 	}
+	{
+		// should use default proxy if only use transform
+		proxyUrl, err := url.Parse(PROXY_URL_1)
+		assert.NoError(t, err)
+		res, err := test_utils.Request(proxyUrl, "https://only-transform.test")
+		assert.NoError(t, err)
+		defer res.Body.Close()
+		body, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "replaced", string(body))
+	}
 }
 
 func TestRequestDenial(t *testing.T) {

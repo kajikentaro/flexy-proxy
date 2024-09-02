@@ -44,7 +44,9 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]route, error) {
 			newR.parsedTransformCommand = &parsedCommand
 		}
 
-		if inR.Response.Rewrite != nil {
+		if inR.Response.Rewrite == nil {
+			newR.proxyUrl = defaultProxy
+		} else {
 			if inR.Response.Rewrite.Proxy == nil {
 				newR.proxyUrl = defaultProxy
 			} else if *inR.Response.Rewrite.Proxy == "" {

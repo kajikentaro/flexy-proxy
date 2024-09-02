@@ -8,3 +8,7 @@ routes:
         from: ".*"
         to: "https://2nd-proxy.test/"
         regex: true
+
+  - url: "https://only-transform.test"
+    response:
+      transform: "sed 's/1,2,3/replaced/'"
