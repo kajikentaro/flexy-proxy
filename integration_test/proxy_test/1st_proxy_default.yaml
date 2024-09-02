@@ -6,5 +6,5 @@ routes:
     response:
       rewrite:
         from: ".*"
-        to: "https://default-proxy.jp/"
+        to: "https://2nd-proxy.test/"
         regex: true

@@ -2,6 +2,7 @@ default_route:
   deny_access: true
 
 routes:
-  - url: "https://default-proxy.jp/"
+  - url: "https://.*/.*"
+    regex: true
     response:
       content: "1,2,3"

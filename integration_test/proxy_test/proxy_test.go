@@ -38,7 +38,7 @@ func TestDefaultRoute(t *testing.T) {
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ReadConfigYaml("2nd_proxy_default.yaml")
+		config, err := utils.ReadConfigYaml("2nd_proxy.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -50,7 +50,7 @@ func TestDefaultRoute(t *testing.T) {
 		// should use default proxy if the request is out of routes
 		proxyUrl, err := url.Parse(PROXY_URL_1)
 		assert.NoError(t, err)
-		res, err := test_utils.Request(proxyUrl, "https://default-proxy.jp/")
+		res, err := test_utils.Request(proxyUrl, "https://out-of-route.test/")
 		assert.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
@@ -58,6 +58,7 @@ func TestDefaultRoute(t *testing.T) {
 
 		assert.Equal(t, "1,2,3", string(body))
 	}
+
 	{
 		// should use default proxy if no additional proxy is specified
 		proxyUrl, err := url.Parse(PROXY_URL_1)
@@ -86,7 +87,7 @@ func TestRequestDenial(t *testing.T) {
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ReadConfigYaml("2nd_proxy_default.yaml")
+		config, err := utils.ReadConfigYaml("2nd_proxy.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -136,7 +137,7 @@ func TestProxyOnEachRoutes(t *testing.T) {
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ReadConfigYaml("2nd_proxy_default.yaml")
+		config, err := utils.ReadConfigYaml("2nd_proxy.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -147,7 +148,7 @@ func TestProxyOnEachRoutes(t *testing.T) {
 	{
 		proxyUrl, err := url.Parse(PROXY_URL_1)
 		assert.NoError(t, err)
-		res, err := test_utils.Request(proxyUrl, "https://default-proxy.jp/")
+		res, err := test_utils.Request(proxyUrl, "https://2nd-proxy.test/")
 		assert.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
@@ -181,7 +182,7 @@ func TestOverwriteProxy(t *testing.T) {
 
 	// setup 2nd proxy
 	{
-		config, err := utils.ReadConfigYaml("2nd_proxy_default.yaml")
+		config, err := utils.ReadConfigYaml("2nd_proxy.yaml")
 		assert.NoError(t, err)
 
 		ctx, cancel := context.WithCancel(context.Background())

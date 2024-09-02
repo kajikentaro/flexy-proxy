@@ -3,11 +3,11 @@ routes:
     response:
       rewrite:
         from: ".*"
-        to: "https://default-proxy.jp/"
+        to: "https://2nd-proxy.test/"
         regex: true
         proxy: "http://localhost:8084"
 
-  - url: "https://default-proxy.jp/"
+  - url: "https://2nd-proxy.test/"
     response:
       rewrite:
         proxy: "http://localhost:8084"
