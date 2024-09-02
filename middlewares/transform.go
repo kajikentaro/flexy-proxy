@@ -30,14 +30,16 @@ func (t *Transform) Middleware(next http.Handler) http.Handler {
 		cmd := exec.Command((*t.command)[0], (*t.command)[1:]...)
 		cmd.Stdin = &nextResponse.body
 
-		var out bytes.Buffer
-		cmd.Stdout = &out
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
 		if err := cmd.Run(); err != nil {
-			http.Error(w, fmt.Sprintf("Failed to execute command: '%s'", strings.Join((*t.command), " ")), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Failed to execute command: '%s'\nError Log: \n%s", strings.Join((*t.command), " "), stderr.String()), http.StatusInternalServerError)
 			return
 		}
 
-		_, err := w.Write(out.Bytes())
+		_, err := w.Write(stdout.Bytes())
 		if err != nil {
 			http.Error(w, "Failed to write response", http.StatusInternalServerError)
 		}
