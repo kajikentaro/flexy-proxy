@@ -1,4 +1,6 @@
-This tool is designed to configure a proxy to return customized responses for specific URLs.
+# Flexy Proxy
+
+An easy-to-start, YAML-based flexible proxy for software development. Return customized responses for specific URLs.
 
 ## Features
 
@@ -17,13 +19,50 @@ This tool is designed to configure a proxy to return customized responses for sp
 
 ## Installation
 
+### Binary Download
+
+You can download the binary files from the [GitHub Releases](https://github.com/kajikentaro/flexy-proxy/releases) page. Choose the version that suits your operating system and architecture.
+
+### Build from Source with Go
+
+If you prefer to build from source, you can install Flexy Proxy using `go install`.
+
 ```
-go install github.com/kajikentaro/elastic-proxy/cmd/elastic-proxy@latest
+go install github.com/kajikentaro/flexy-proxy@latest
 ```
+
+## Usage
+
+1. Prepare the executable and add it to your PATH  
+   Make sure the `flexy` binary is either in your system's PATH or moved to a location like `/usr/local/bin`.
+
+2. Create a `config.yaml` file  
+   Define your routes and responses in a `config.yaml` file. For example:
+
+   ```yaml
+   routes:
+     - url: "http://sample.test"
+       regex: false
+       response:
+         content: "hello world\n"
+   ```
+
+3. Run the proxy with your config file  
+   Execute `flexy` with the `-f` flag pointing to your configuration file:
+
+   ```bash
+   flexy -f config.yaml
+   ```
+
+4. Use the proxy  
+   Now, you can use the proxy with a tool like `curl`:
+
+   ```bash
+   $ curl http://sample.test -x http://localhost:8888
+   hello world
+   ```
 
 ## Configurations
-
-Configurations are defined using the `config.yaml` file.
 
 | Key             | Type                                   | Description                                                                                                                                                                                                              | Example   |
 | --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
