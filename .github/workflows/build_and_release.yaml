@@ -23,6 +23,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          project_path: "./cmd/elastic-proxy"
+          project_path: "./"
           compress_assets: OFF
           md5sum: FALSE
+          binary_name: "flexy"
