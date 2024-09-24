@@ -3,8 +3,8 @@ package routers
 import (
 	"net/http"
 
-	"github.com/kajikentaro/elastic-proxy/middlewares"
-	"github.com/kajikentaro/elastic-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/middlewares"
+	"github.com/kajikentaro/flexy-proxy/models"
 )
 
 func NewHandleTemplate(handler models.Handler, contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string) models.Handler {

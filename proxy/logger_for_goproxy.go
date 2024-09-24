@@ -3,7 +3,7 @@ package proxy
 import (
 	"fmt"
 
-	"github.com/kajikentaro/elastic-proxy/loggers"
+	"github.com/kajikentaro/flexy-proxy/loggers"
 )
 
 type loggerForProxy struct {

@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	test_utils "github.com/kajikentaro/elastic-proxy/integration_test"
-	"github.com/kajikentaro/elastic-proxy/loggers"
-	"github.com/kajikentaro/elastic-proxy/models"
-	"github.com/kajikentaro/elastic-proxy/utils"
+	test_utils "github.com/kajikentaro/flexy-proxy/integration_test"
+	"github.com/kajikentaro/flexy-proxy/loggers"
+	"github.com/kajikentaro/flexy-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/utils"
 
 	"github.com/stretchr/testify/assert"
 )

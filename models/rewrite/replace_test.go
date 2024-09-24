@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/kajikentaro/elastic-proxy/models/rewrite"
+	"github.com/kajikentaro/flexy-proxy/models/rewrite"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"

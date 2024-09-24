@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"regexp"
 
-	"github.com/kajikentaro/elastic-proxy/loggers"
-	"github.com/kajikentaro/elastic-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/loggers"
+	"github.com/kajikentaro/flexy-proxy/models"
 
 	"github.com/elazarl/goproxy"
 )
@@ -51,7 +51,7 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 	}
 
 	resWriter := NewResponseWriter(req)
-	resWriter.Header().Add("Elastic-Proxy", fmt.Sprintf("matched URL: %s", matchedUrl))
+	resWriter.Header().Add("flexy-proxy", fmt.Sprintf("matched URL: %s", matchedUrl))
 
 	// logging
 	args := []interface{}{

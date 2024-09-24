@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	"github.com/google/shlex"
-	"github.com/kajikentaro/elastic-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/models"
 )
 
 type router struct {
