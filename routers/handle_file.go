@@ -3,7 +3,7 @@ package routers
 import (
 	"net/http"
 
-	"github.com/kajikentaro/elastic-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/models"
 )
 
 func NewHandleFile(filePath string) models.Handler {

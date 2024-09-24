@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kajikentaro/elastic-proxy/proxy"
-	"github.com/kajikentaro/elastic-proxy/utils"
+	"github.com/kajikentaro/flexy-proxy/proxy"
+	"github.com/kajikentaro/flexy-proxy/utils"
 )
 
 func fatalf(format string, a ...any) {
@@ -16,7 +16,6 @@ func fatalf(format string, a ...any) {
 }
 
 func main() {
-	// TODO: add tests
 	var customConfigPath string
 	flag.StringVar(&customConfigPath, "f", utils.DEFAULT_CONFIG_PATH, "Path to custom config file")
 	var portNum int

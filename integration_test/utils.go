@@ -9,10 +9,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/kajikentaro/elastic-proxy/loggers"
-	"github.com/kajikentaro/elastic-proxy/models"
-	"github.com/kajikentaro/elastic-proxy/proxy"
-	"github.com/kajikentaro/elastic-proxy/utils"
+	"github.com/kajikentaro/flexy-proxy/loggers"
+	"github.com/kajikentaro/flexy-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/proxy"
+	"github.com/kajikentaro/flexy-proxy/utils"
 )
 
 func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Logger) error {

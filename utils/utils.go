@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kajikentaro/elastic-proxy/loggers"
-	"github.com/kajikentaro/elastic-proxy/models"
-	"github.com/kajikentaro/elastic-proxy/proxy"
-	"github.com/kajikentaro/elastic-proxy/routers"
+	"github.com/kajikentaro/flexy-proxy/loggers"
+	"github.com/kajikentaro/flexy-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/proxy"
+	"github.com/kajikentaro/flexy-proxy/routers"
 
 	"gopkg.in/yaml.v3"
 )

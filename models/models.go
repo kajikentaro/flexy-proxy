@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kajikentaro/elastic-proxy/models/rewrite"
+	"github.com/kajikentaro/flexy-proxy/models/rewrite"
 )
 
 type RawConfig struct {

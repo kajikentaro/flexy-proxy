@@ -1,4 +1,4 @@
-module github.com/kajikentaro/elastic-proxy
+module github.com/kajikentaro/flexy-proxy
 
 go 1.21.4
 

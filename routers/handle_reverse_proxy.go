@@ -6,7 +6,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/kajikentaro/elastic-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/models"
 )
 
 func NewHandleReverseProxy(forwardUrl *url.URL, proxyUrl *url.URL) models.Handler {
