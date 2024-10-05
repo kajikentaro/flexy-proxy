@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"crypto/tls"
+	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -64,12 +67,31 @@ func ParseConfig(rawConfig *models.RawConfig) (models.Router, *loggers.Logger, *
 		return nil, nil, nil, err
 	}
 
+	// load certificates
+	var cer tls.Certificate
+	if rawConfig.Certificate != "" || rawConfig.CertificateKey != "" {
+		if rawConfig.Certificate == "" || rawConfig.CertificateKey == "" {
+			return nil, nil, nil, fmt.Errorf("both 'certificate' and 'certificate_key' should be specified in the config file")
+		}
+		if _, err := os.Stat(rawConfig.Certificate); errors.Is(err, os.ErrNotExist) {
+			return nil, nil, nil, fmt.Errorf("certificate, '%s', does not exist", rawConfig.Certificate)
+		}
+		if _, err := os.Stat(rawConfig.CertificateKey); errors.Is(err, os.ErrNotExist) {
+			return nil, nil, nil, fmt.Errorf("certificate_key, '%s', does not exist", rawConfig.CertificateKey)
+		}
+		cer, err = tls.LoadX509KeyPair(rawConfig.Certificate, rawConfig.CertificateKey)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("failed to load certificate: %w", err)
+		}
+	}
+
 	proxyConfig := &proxy.Config{
 		DefaultRoute: proxy.DefaultRoute{
 			Proxy:      defaultProxy,
 			DenyAccess: rawConfig.DefaultRoute.DenyAccess,
 		},
-		AlwaysMitm: rawConfig.AlwaysMitm,
+		AlwaysMitm:  rawConfig.AlwaysMitm,
+		Certificate: &cer,
 	}
 
 	logLevelStr := "INFO"

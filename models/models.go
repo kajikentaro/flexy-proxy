@@ -8,10 +8,12 @@ import (
 )
 
 type RawConfig struct {
-	Routes       []Route
-	DefaultRoute RawDefaultRoute `yaml:"default_route"`
-	LogLevel     string          `yaml:"log_level"`
-	AlwaysMitm   bool            `yaml:"always_mitm"`
+	Routes         []Route
+	DefaultRoute   RawDefaultRoute `yaml:"default_route"`
+	LogLevel       string          `yaml:"log_level"`
+	AlwaysMitm     bool            `yaml:"always_mitm"`
+	Certificate    string          `yaml:"certificate"`
+	CertificateKey string          `yaml:"certificate_key"`
 }
 
 type RawDefaultRoute struct {

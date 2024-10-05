@@ -77,6 +77,7 @@ type Proxy struct {
 type Config struct {
 	DefaultRoute DefaultRoute
 	AlwaysMitm   bool
+	Certificate  *tls.Certificate
 }
 
 type DefaultRoute struct {
@@ -94,16 +95,30 @@ func SetupProxy(router models.Router, logger *loggers.Logger, config *Config) *g
 	return ps.getProxyHttpServer()
 }
 
+func (p *Proxy) eavesDropHttp() goproxy.FuncHttpsHandler {
+	if p.config.Certificate == nil {
+		return goproxy.AlwaysMitm
+	}
+
+	ca := &goproxy.ConnectAction{
+		Action:    goproxy.ConnectMitm,
+		TLSConfig: goproxy.TLSConfigFromCA(p.config.Certificate),
+	}
+	return func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
+		return ca, host
+	}
+}
+
 func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Logger = GenLoggerForProxy(p.logger)
 	proxy.Verbose = true
 
 	if p.config.AlwaysMitm {
-		proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+		proxy.OnRequest().HandleConnect(p.eavesDropHttp())
 	} else {
 		hosts := p.router.GetHttpsHostList()
-		proxy.OnRequest(goproxy.ReqHostIs(hosts...)).HandleConnect(goproxy.AlwaysMitm)
+		proxy.OnRequest(goproxy.ReqHostIs(hosts...)).HandleConnect(p.eavesDropHttp())
 	}
 
 	proxy.OnRequest().DoFunc(p.onRequest)

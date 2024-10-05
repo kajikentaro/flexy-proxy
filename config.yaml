@@ -1,5 +1,8 @@
 routes:
-  - url: "http://sample.test"
+  - url: "https://sample.test"
     regex: false
     response:
       content: "hello world\n"
+
+certificate: "server.crt"
+certificate_key: "server.key"
