@@ -3,6 +3,3 @@ routes:
     regex: false
     response:
       content: "hello world\n"
-
-certificate: "server.crt"
-certificate_key: "server.key"

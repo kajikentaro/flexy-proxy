@@ -27,3 +27,4 @@ jobs:
           compress_assets: OFF
           md5sum: FALSE
           binary_name: "flexy"
+          ldflags: "-X main.version=${{ github.ref_name }}"
