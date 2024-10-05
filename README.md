@@ -64,12 +64,14 @@ go install github.com/kajikentaro/flexy-proxy@latest
 
 ## Configurations
 
-| Key             | Type                                   | Description                                                                                                                                                                                                              | Example   |
-| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
-| `default_route` | object                                 | Default route configuration.                                                                                                                                                                                             | See below |
-| `log_level`     | "DEBUG" \| "INFO" \| "WARN" \| "ERROR" | The level of logging detail.                                                                                                                                                                                             | `DEBUG`   |
-| `always_mitm`   | boolean                                | If `true`, eavesdrop all HTTPS access to get full URL. (It may slow down performance) <br/> If `false`, only eavesdrop HTTP access if host name is matched. (Regex expressions like `.*` in the host name can't be used) | `false`   |
-| `routes`        | object                                 | Routing settings.                                                                                                                                                                                                        | See below |
+| Key               | Type                                   | Description                                                                                                                                                                                                              | Example      |
+| ----------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| `default_route`   | object                                 | Default route configuration.                                                                                                                                                                                             | See below    |
+| `log_level`       | "DEBUG" \| "INFO" \| "WARN" \| "ERROR" | The level of logging detail.                                                                                                                                                                                             | `DEBUG`      |
+| `always_mitm`     | boolean                                | If `true`, eavesdrop all HTTPS access to get full URL. (It may slow down performance) <br/> If `false`, only eavesdrop HTTP access if host name is matched. (Regex expressions like `.*` in the host name can't be used) | `false`      |
+| `routes`          | object                                 | Routing settings.                                                                                                                                                                                                        | See below    |
+| `certificate`     | string                                 | The path to the SSL certificate file.                                                                                                                                                                                    | `server.crt` |
+| `certificate_key` | string                                 | The path to the private key file corresponding to `certificate`.                                                                                                                                                         | `server.key` |
 
 ### `default_route`
 
@@ -123,30 +125,30 @@ log_level: "INFO"
 always_mitm: true
 
 routes:
-  # if the request url is "https://example.com/user/[user_id]/post/[post_id]",
+  # if the request URL is "https://example.com/user/[user_id]/post/[post_id]",
   # reverse proxy to "https://example.com/api?user=[user_id]&post=[post_id]".
   - url: "https://example.com/user/[^/]+/post/[^/]"
     regex: true
     response:
       rewrite:
-        from: '^https://example\.com/user/([^/]+)/post/([^/]+)'
+        from: '^https://example\\.com/user/([^/]+)/post/([^/]+)'
         to: "https://example.com/api?user=$1&post=$2"
         regex: true
-  # if the request url is "https://example.com/not-found",
-  # return the content "notfound" with 404 status code.
+  # if the request URL is "https://example.com/not-found",
+  # return the content "not found" with 404 status code.
   - url: "https://example.com/not-found"
     regex: false
     response:
       content: "not found"
       content_type: "text/plain"
       status: 404
-  # if the request url is "https://example.com/[any character].png",
+  # if the request URL is "https://example.com/[any character].png",
   # return the file: "./sample.png"
   - url: 'https://example.com/.*\.png'
     regex: true
     response:
       file: "sample.png"
-  # if the request url is "https://example.com/proxy",
+  # if the request URL is "https://example.com/proxy",
   # reverse proxy to "https://example.com/api" using a specific proxy.
   - url: "https://example.com/proxy"
     regex: false
@@ -156,7 +158,7 @@ routes:
         to: "https://example.com/api"
         regex: false
         proxy: "http://proxy.example.com"
-  # if the request url is "https://content.test",
+  # if the request URL is "https://content.test",
   # return the content "basic" with a custom header.
   - url: "https://content.test"
     regex: false
@@ -164,11 +166,28 @@ routes:
       content: "basic"
       headers:
         "Access-Control-Allow-Origin": "*"
-  # if the request url is "https://content.test/",
+  # if the request URL is "https://content.test/",
   # return the content "foo" transformed to "bar".
   - url: "https://content.test/"
     regex: false
     response:
       content: "foo"
       transform: "sed -E 's/foo/bar/g'"
+```
+
+## Certificates
+
+The following commands create a private key (`server.key`) and a certificate (`server.csr`). By specifying options, Flexy Proxy can use this private key and certificate to generate new certificates for the requested hostname and use them for communication. By installing the `server.csr` certificate on your PC or browser, responses from Flexy Proxy will be considered secure.
+
+```
+openssl genrsa -out server.key
+openssl req -new -key server.key -out server.csr -subj "/C=JP/ST=Tokyo/L=Minato/O=Example Company/OU=IT Department/CN=example.com"
+openssl x509 -req -days 3650 -signkey server.key -in server.csr -out server.crt
+```
+
+Specify the certificates in the YAML file as follows:
+
+```yaml
+certificate: "server.crt"
+certificate_key: "server.key"
 ```

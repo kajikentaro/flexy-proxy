@@ -1,0 +1,7 @@
+certificate: "server.crt"
+certificate_key: "server.key"
+
+routes:
+  - url: "https://sample.test"
+    response:
+      content: "test response"

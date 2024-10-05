@@ -1,3 +1,7 @@
 tmp/
 .vscode
 config.yaml
+
+server.key
+server.csr
+server.crt
