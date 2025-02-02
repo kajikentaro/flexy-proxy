@@ -27,21 +27,15 @@ var (
 )
 
 func startProxy() {
-	config, err := utils.ReadConfigYaml(customConfigPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to parse config file: %v\n", err)
-		os.Exit(1)
-	}
-
-	router, logger, proxyConfig, err := utils.ParseConfig(config)
+	proxyConfig, err := utils.ParseConfig(customConfigPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 
-	proxy := proxy.SetupProxy(router, logger, proxyConfig)
+	proxy := proxy.SetupProxy(proxyConfig)
 	addr := fmt.Sprintf(":%d", portNum)
-	logger.Info(fmt.Sprintf("Proxy started on %s", addr))
+	proxyConfig.Logger.Info(fmt.Sprintf("Proxy started on %s", addr))
 	fmt.Fprintf(os.Stderr, "%v\n", http.ListenAndServe(addr, proxy))
 }
 

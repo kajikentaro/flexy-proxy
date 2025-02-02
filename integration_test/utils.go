@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/kajikentaro/flexy-proxy/loggers"
-	"github.com/kajikentaro/flexy-proxy/models"
 	"github.com/kajikentaro/flexy-proxy/proxy"
 	"github.com/kajikentaro/flexy-proxy/utils"
 )
@@ -53,13 +52,13 @@ func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Log
 	return nil
 }
 
-func StartProxyServer(ctx context.Context, proxyAddr string, config *models.RawConfig) error {
-	router, logger, proxyConfig, err := utils.ParseConfig(config)
+func StartProxyServer(ctx context.Context, proxyAddr string, configPath string) error {
+	proxyConfig, err := utils.ParseConfig(configPath)
 	if err != nil {
 		return err
 	}
 
-	proxy := proxy.SetupProxy(router, logger, proxyConfig)
+	proxy := proxy.SetupProxy(proxyConfig)
 
 	srv := &http.Server{Addr: proxyAddr, Handler: proxy}
 
@@ -68,14 +67,14 @@ func StartProxyServer(ctx context.Context, proxyAddr string, config *models.RawC
 	go func() {
 		err := StartServer(srv)
 		if err != nil {
-			logger.Error("failed to start a server", err)
+			proxyConfig.Logger.Error("failed to start a server", err)
 		}
 	}()
 	go func() {
 		<-ctx.Done()
 		err := StopServer(srv)
 		if err != nil {
-			logger.Error("failed to shutdown the server", err)
+			proxyConfig.Logger.Error("failed to shutdown the server", err)
 		}
 	}()
 

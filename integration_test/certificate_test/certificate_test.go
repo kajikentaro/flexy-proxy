@@ -17,7 +17,6 @@ import (
 	"time"
 
 	test_utils "github.com/kajikentaro/flexy-proxy/integration_test"
-	"github.com/kajikentaro/flexy-proxy/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,13 +28,10 @@ func TestCertificateOption(t *testing.T) {
 	err := createCertificates()
 	assert.NoError(t, err)
 
-	config, err := utils.ReadConfigYaml("certificate_test.yaml")
-	assert.NoError(t, err, "failed to parse config")
-
 	{
 		// create a proxy server
 		ctx, cancel := context.WithCancel(context.Background())
-		err = test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config)
+		err = test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, "certificate_test.yaml")
 		assert.NoError(t, err, "failed to start a proxy server")
 		defer cancel()
 	}
