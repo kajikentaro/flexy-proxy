@@ -42,7 +42,7 @@ func main() {
 
 	config, err := utils.ReadConfigYaml(customConfigPath)
 	if err != nil {
-		fatalf("Error parsing config: %v", err)
+		fatalf("Failed to parse config file: %v", err)
 	}
 
 	router, logger, proxyConfig, err := utils.ParseConfig(config)
