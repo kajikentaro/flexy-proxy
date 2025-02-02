@@ -1,19 +1,14 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/kajikentaro/flexy-proxy/proxy"
 	"github.com/kajikentaro/flexy-proxy/utils"
+	"github.com/spf13/cobra"
 )
-
-func fatalf(format string, a ...any) {
-	fmt.Fprintf(os.Stderr, format+"\n", a...)
-	os.Exit(1)
-}
 
 // this will be specified like:
 // go build -ldflags "-X 'main.version=1.0.0'"
@@ -26,32 +21,58 @@ func getVersion() string {
 	return version
 }
 
-func main() {
-	var customConfigPath string
-	flag.StringVar(&customConfigPath, "f", utils.DEFAULT_CONFIG_PATH, "Path to custom config file")
-	var portNum int
-	flag.IntVar(&portNum, "p", 8888, "Port number")
-	var showVersion bool
-	flag.BoolVar(&showVersion, "version", false, "Show version")
-	flag.Parse()
+var (
+	customConfigPath string
+	portNum          int
+)
 
-	if showVersion {
-		fmt.Println(getVersion())
-		return
-	}
-
+func startProxy() {
 	config, err := utils.ReadConfigYaml(customConfigPath)
 	if err != nil {
-		fatalf("Failed to parse config file: %v", err)
+		fmt.Fprintf(os.Stderr, "Failed to parse config file: %v\n", err)
+		os.Exit(1)
 	}
 
 	router, logger, proxyConfig, err := utils.ParseConfig(config)
 	if err != nil {
-		fatalf("%v", err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
 
 	proxy := proxy.SetupProxy(router, logger, proxyConfig)
 	addr := fmt.Sprintf(":%d", portNum)
 	logger.Info(fmt.Sprintf("Proxy started on %s", addr))
-	fatalf("%v", http.ListenAndServe(addr, proxy))
+	fmt.Fprintf(os.Stderr, "%v\n", http.ListenAndServe(addr, proxy))
+}
+
+func main() {
+	rootCmd := &cobra.Command{
+		Use:   "main",
+		Short: "A YAML-based flexible proxy for software development",
+		Run: func(cmd *cobra.Command, args []string) {
+			startProxy()
+		},
+	}
+
+	rootCmd.PersistentFlags().StringVarP(&customConfigPath, "config", "f", utils.DEFAULT_CONFIG_PATH, "Path to custom config file")
+	rootCmd.PersistentFlags().IntVarP(&portNum, "port", "p", 8888, "Port number")
+
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Show version",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(getVersion())
+		},
+	}
+
+	startCmd := &cobra.Command{
+		Use:   "start",
+		Short: "Start the proxy server",
+		Run: func(cmd *cobra.Command, args []string) {
+			startProxy()
+		},
+	}
+
+	rootCmd.AddCommand(versionCmd, startCmd)
+	rootCmd.Execute()
 }
