@@ -10,7 +10,6 @@ import (
 
 	test_utils "github.com/kajikentaro/flexy-proxy/integration_test"
 	"github.com/kajikentaro/flexy-proxy/loggers"
-	"github.com/kajikentaro/flexy-proxy/utils"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -28,15 +27,10 @@ func fatalln(a ...any) {
 }
 
 func TestMain(m *testing.M) {
-	config, err := utils.ReadConfigYaml("regex_route_test.yaml")
-	if err != nil {
-		fatalln("failed to parse config:", err)
-	}
-
 	{
 		// create a proxy server
 		ctx, cancel := context.WithCancel(context.Background())
-		err = test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config)
+		err := test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, "regex_route_test.yaml")
 		if err != nil {
 			fatalln("failed to start a proxy server:", err)
 		}
@@ -45,7 +39,7 @@ func TestMain(m *testing.M) {
 	{
 		// create a sample http server to return "hello world"
 		ctx, cancel := context.WithCancel(context.Background())
-		err = test_utils.StartSampleHttpServer(ctx, SAMPLE_SERVER_HTTP_ADDRESS, loggers.GenLogger(nil))
+		err := test_utils.StartSampleHttpServer(ctx, SAMPLE_SERVER_HTTP_ADDRESS, loggers.GenLogger(nil))
 		if err != nil {
 			fatalln("failed to start a http server:", err)
 		}

@@ -29,22 +29,23 @@ var SAMPLE_SERVER_PORT_NUMBER = 8082
 var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
 
 func TestRequestOnConfigUrl(t *testing.T) {
-	config, err := utils.ReadConfigYaml("route_test.yaml")
-	assert.NoError(t, err)
 	{
 		// create a proxy server
 		ctx, cancel := context.WithCancel(context.Background())
-		err = test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, config)
+		err := test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, "route_test.yaml")
 		assert.NoError(t, err)
 		defer cancel()
 	}
 	{
 		// create a sample http server to return "hello world"
 		ctx, cancel := context.WithCancel(context.Background())
-		err = test_utils.StartSampleHttpServer(ctx, SAMPLE_SERVER_HTTP_ADDRESS, loggers.GenLogger(nil))
+		err := test_utils.StartSampleHttpServer(ctx, SAMPLE_SERVER_HTTP_ADDRESS, loggers.GenLogger(nil))
 		assert.NoError(t, err)
 		defer cancel()
 	}
+
+	config, err := utils.ReadConfigYaml("route_test.yaml")
+	assert.NoError(t, err)
 
 	for idx, c := range config.Routes {
 		t.Run(fmt.Sprintf("index: %d, route: %s", idx, c.Url), func(t *testing.T) {
