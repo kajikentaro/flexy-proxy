@@ -49,7 +49,12 @@ func (c *ReverseProxyHandle) GetType() string {
 }
 
 func (c *ReverseProxyHandle) GetResponseInfo() map[string]string {
+	proxy := "None"
+	if c.proxyUrl != nil {
+		proxy = c.proxyUrl.String()
+	}
 	return map[string]string{
 		"forward url": c.forwardUrl.String(),
+		"proxy":       proxy,
 	}
 }
