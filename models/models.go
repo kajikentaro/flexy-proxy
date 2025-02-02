@@ -1,11 +1,15 @@
 package models
 
 import (
+	_ "embed"
 	"net/http"
 	"net/url"
 
 	"github.com/kajikentaro/flexy-proxy/models/rewrite"
 )
+
+//go:embed config-spec.json
+var ConfigSpec string
 
 type RawConfig struct {
 	Routes         []Route

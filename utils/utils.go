@@ -12,6 +12,7 @@ import (
 	"github.com/kajikentaro/flexy-proxy/models"
 	"github.com/kajikentaro/flexy-proxy/proxy"
 	"github.com/kajikentaro/flexy-proxy/routers"
+	"github.com/xeipuuv/gojsonschema"
 
 	"gopkg.in/yaml.v3"
 )
@@ -44,12 +45,39 @@ func ReadConfigYaml(customPath string) (*models.RawConfig, error) {
 		return nil, err
 	}
 
+	{
+		var data map[string]interface{}
+		err := yaml.Unmarshal(fileContent, &data)
+		if err != nil {
+			return nil, err
+		}
+
+		// validation
+		schemaLoader := gojsonschema.NewStringLoader(models.ConfigSpec)
+		dataLoader := gojsonschema.NewGoLoader(data)
+		result, err := gojsonschema.Validate(schemaLoader, dataLoader)
+		if err != nil {
+			return nil, err
+		}
+		if !result.Valid() {
+			return nil, convertToError(result.Errors())
+		}
+	}
+
 	config := DEFAULT_CONFIG
 	err = yaml.Unmarshal(fileContent, &config)
 	if err != nil {
 		return nil, err
 	}
 	return &config, nil
+}
+
+func convertToError(errs []gojsonschema.ResultError) error {
+	text := "\n"
+	for _, err := range errs {
+		text += fmt.Sprintf("- %s\n", err.String())
+	}
+	return errors.New(text)
 }
 
 func ParseConfig(rawConfig *models.RawConfig) (models.Router, *loggers.Logger, *proxy.Config, error) {

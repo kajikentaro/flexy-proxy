@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "config-spec.json",
+  "type": "object",
+  "title": "Flexy Proxy Config Specification",
+  "additionalProperties": false,
+  "properties": {
+    "default_route": {
+      "type": "object",
+      "default": {},
+      "description": "Defines the default behavior when no specific route matches.",
+      "additionalProperties": false,
+      "properties": {
+        "proxy": {
+          "type": "string",
+          "default": "",
+          "description": "The URL of the proxy to connect to by default.",
+          "examples": ["http://default.proxy"]
+        },
+        "deny_access": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to deny access if no routing matches.",
+          "examples": [true]
+        }
+      }
+    },
+    "log_level": {
+      "type": "string",
+      "default": "INFO",
+      "description": "The level of logging detail. Possible values are 'DEBUG', 'INFO', 'WARN', or 'ERROR'.",
+      "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
+      "examples": ["DEBUG"]
+    },
+    "always_mitm": {
+      "type": "boolean",
+      "default": true,
+      "description": "If true, eavesdrop all HTTPS access to get the full URL. If false, only eavesdrop HTTP access if the host name matches.",
+      "examples": [true, false]
+    },
+    "routes": {
+      "type": "array",
+      "default": [],
+      "description": "Routing settings. Each route defines a URL pattern and the response to return.",
+      "items": {
+        "type": "object",
+        "description": "A single route configuration.",
+        "required": ["url", "response"],
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The URL pattern to match. If this URL matches, the specified response will be returned.",
+            "examples": [
+              "https://example.com/api",
+              "https://example.com/user/[^/]+/post/[^/]"
+            ]
+          },
+          "regex": {
+            "type": "boolean",
+            "description": "If true, regex can be used for URL matching.",
+            "examples": [true, false]
+          },
+          "response": {
+            "type": ["object", "null"],
+            "description": "The response to return. One of 'rewrite', 'content', or 'file' can be specified.",
+            "additionalProperties": false,
+            "properties": {
+              "rewrite": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "description": "Rewrite settings. Defines how the URL should be rewritten.",
+                    "additionalProperties": false,
+                    "properties": {
+                      "from": {
+                        "type": "string",
+                        "description": "The pattern to be replaced.",
+                        "examples": [
+                          "^https://example\\\\.com/user/([^/]+)/post/([^/]+)"
+                        ]
+                      },
+                      "to": {
+                        "type": "string",
+                        "description": "The replacement string.",
+                        "examples": ["https://example.com/api?user=$1&post=$2"]
+                      },
+                      "regex": {
+                        "type": "boolean",
+                        "description": "Whether to use regex for matching the 'from' URL.",
+                        "default": false,
+                        "examples": [true, false]
+                      },
+                      "proxy": {
+                        "type": "string",
+                        "default": "",
+                        "description": "The URL of the proxy to use for this route. If not specified, 'default_route.proxy' will be used. To disable the proxy, specify an empty string.",
+                        "examples": ["http://proxy.example.com"]
+                      }
+                    }
+                  },
+                  {
+                    "type": "string",
+                    "description": "The destination URL to rewrite.",
+                    "examples": ["https://example.com/api?user=me"]
+                  }
+                ]
+              },
+              "content": {
+                "type": "string",
+                "description": "The content to return as the response.",
+                "examples": ["This is the response content", "not found"]
+              },
+              "content_type": {
+                "type": "string",
+                "default": "text/plain",
+                "description": "The MIME type of the content.",
+                "examples": ["text/plain", "application/json"]
+              },
+              "status": {
+                "type": "integer",
+                "default": 200,
+                "description": "The HTTP status code to return.",
+                "examples": [200, 404]
+              },
+              "file": {
+                "type": "string",
+                "default": "",
+                "description": "The file path to return as the response.",
+                "examples": ["/path/to/file", "sample.png"]
+              },
+              "headers": {
+                "type": "object",
+                "default": {},
+                "description": "Additional headers to include in the response.",
+                "examples": [
+                  {
+                    "Access-Control-Allow-Origin": "*"
+                  }
+                ]
+              },
+              "transform": {
+                "type": "string",
+                "default": "",
+                "description": "The command to transform the response content.",
+                "examples": ["sed -E 's/foo/bar/g'", "bash ./script.sh"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "certificate": {
+      "type": "string",
+      "default": "",
+      "description": "The path to the SSL certificate file.",
+      "examples": ["server.crt"]
+    },
+    "certificate_key": {
+      "type": "string",
+      "default": "",
+      "description": "The path to the private key file corresponding to the SSL certificate.",
+      "examples": ["server.key"]
+    }
+  }
+}
