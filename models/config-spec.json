@@ -36,7 +36,7 @@
       "type": "boolean",
       "default": true,
       "description": "If true, eavesdrop all HTTPS access to get the full URL. If false, only eavesdrop HTTP access if the host name matches.",
-      "examples": [true, false]
+      "examples": [true]
     },
     "routes": {
       "type": "array",
@@ -59,7 +59,8 @@
           "regex": {
             "type": "boolean",
             "description": "If true, regex can be used for URL matching.",
-            "examples": [true, false]
+            "default": false,
+            "examples": [false]
           },
           "response": {
             "type": ["object", "null"],
@@ -89,7 +90,7 @@
                         "type": "boolean",
                         "description": "Whether to use regex for matching the 'from' URL.",
                         "default": false,
-                        "examples": [true, false]
+                        "examples": [false]
                       },
                       "proxy": {
                         "type": "string",
