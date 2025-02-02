@@ -1,6 +1,6 @@
 # Flexy Proxy
 
-An easy-to-start, YAML-based flexible proxy for software development. Return customized responses for specific URLs.
+An easy-to-start, YAML-based flexible proxy server for software development. Return customized responses for specific URLs.
 
 ## Features
 
