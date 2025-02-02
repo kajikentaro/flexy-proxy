@@ -64,56 +64,10 @@ go install github.com/kajikentaro/flexy-proxy@latest
 
 ## Configurations
 
-| Key               | Type                                   | Description                                                                                                                                                                                                              | Example      |
-| ----------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
-| `default_route`   | object                                 | Default route configuration.                                                                                                                                                                                             | See below    |
-| `log_level`       | "DEBUG" \| "INFO" \| "WARN" \| "ERROR" | The level of logging detail.                                                                                                                                                                                             | `DEBUG`      |
-| `always_mitm`     | boolean                                | If `true`, eavesdrop all HTTPS access to get full URL. (It may slow down performance) <br/> If `false`, only eavesdrop HTTP access if host name is matched. (Regex expressions like `.*` in the host name can't be used) | `false`      |
-| `routes`          | object                                 | Routing settings.                                                                                                                                                                                                        | See below    |
-| `certificate`     | string                                 | The path to the SSL certificate file.                                                                                                                                                                                    | `server.crt` |
-| `certificate_key` | string                                 | The path to the private key file corresponding to `certificate`.                                                                                                                                                         | `server.key` |
+For more details on configurations, visit:
+[https://kajikentaro.github.io/flexy-proxy/output/](https://kajikentaro.github.io/flexy-proxy/output/)
 
-### `default_route`
-
-| Key           | Type    | Description                                    | Example                |
-| ------------- | ------- | ---------------------------------------------- | ---------------------- |
-| `proxy`       | string  | The URL of the proxy to connect to by default. | `http://default.proxy` |
-| `deny_access` | boolean | Whether to deny access if no routing matches.  | `true`                 |
-
-### `routes`
-
-Define routing settings. Each route is defined in the following format:
-
-| Key        | Type    | Description                                                                                 | Example                   |
-| ---------- | ------- | ------------------------------------------------------------------------------------------- | ------------------------- |
-| `url`      | string  | The URL pattern to match. If this URL matches, the specified response will be returned.     | `https://example.com/api` |
-| `regex`    | boolean | If `true`, regex can be used for URL matching.                                              | `true`                    |
-| `response` | object  | The response to return. `rewrite`, `content`, or `file` and other options can be specified. | See below                 |
-
-#### `response`
-
-Only one of `rewrite`, `file`, or `content` can be specified.
-
-| Key            | Type   | Description                                        | Example                              |
-| -------------- | ------ | -------------------------------------------------- | ------------------------------------ |
-| `rewrite`      | object | Rewrite settings. See below for detailed format.   | See below                            |
-| `content`      | string | The content to return.                             | `This is the response content`       |
-| `file`         | string | The file path to return.                           | `/path/to/file`                      |
-| `status`       | int    | The HTTP status code.                              | `404`                                |
-| `content_type` | string | The MIME type of the content.                      | `text/plain`                         |
-| `headers`      | map    | The additional headers to include in the response. | `"Access-Control-Allow-Origin": "*"` |
-| `transform`    | string | The command to transform the response content.     | `sed -E 's/foo/bar/g'`               |
-
-##### `rewrite`
-
-| Key     | Type    | Description                                                                                                                                         | Example                      |
-| ------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `from`  | string  | The pattern to be replaced.                                                                                                                         | `https://example.com/path`   |
-| `to`    | string  | The replacement string.                                                                                                                             | `http://localhost:3000/path` |
-| `regex` | boolean | Whether to use regex for matching the `from` URL.                                                                                                   | `true`                       |
-| `proxy` | string  | The URL of the proxy to use for this route. If not specified, `default_route.proxy` will be used. To disable the proxy, specify an empty string "". | `http://proxy.example.com`   |
-
-## Config example
+### Example
 
 `config.yaml`
 
