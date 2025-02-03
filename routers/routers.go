@@ -66,23 +66,47 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]route, error) {
 	return routes, nil
 }
 
-func validate(routes []route) error {
-	for _, r := range routes {
+func validate(routes []route, shouldDecryptHttps bool) error {
+	for i, r := range routes {
+		pos := fmt.Sprint("route.", i)
 		if r.parsedUrl.Scheme != "http" && r.parsedUrl.Scheme != "https" {
-			return NewValidationError(fmt.Sprintf("scheme of '%s' must be either 'http' or 'https'", r.Url))
+			return NewValidationError(
+				pos,
+				"URL Scheme must be 'http' or 'https'.",
+				r.Url,
+			)
+		}
+
+		if r.parsedUrl.Host == "" {
+			return NewValidationError(
+				pos,
+				"Invalid URL.",
+				r.Url,
+			)
+		}
+
+		isRegexpEnabled := r.regexUrl != nil
+		if !shouldDecryptHttps &&
+			isRegexpEnabled &&
+			isRegexp(r.parsedUrl.Host) {
+			return NewValidationError(
+				pos,
+				"Regular expressions are not allowed in the hostname when `always_mitm` is disabled.",
+				r.parsedUrl.Host,
+			)
 		}
 	}
 
 	return nil
 }
 
-func GenRouter(routes []models.Route, defaultProxy *url.URL) (models.Router, error) {
+func GenRouter(routes []models.Route, defaultProxy *url.URL, shouldDecryptHttps bool) (models.Router, error) {
 	parsedRoutes, err := parse(routes, defaultProxy)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validate(parsedRoutes)
+	err = validate(parsedRoutes, shouldDecryptHttps)
 	if err != nil {
 		return nil, err
 	}
