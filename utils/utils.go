@@ -104,7 +104,7 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 		}
 	}
 
-	router, err := routers.GenRouter(rawConfig.Routes, defaultProxy)
+	router, err := routers.GenRouter(rawConfig.Routes, defaultProxy, rawConfig.AlwaysMitm)
 	if err != nil {
 		return nil, err
 	}

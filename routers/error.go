@@ -7,6 +7,10 @@ import (
 
 var ErrValidation = errors.New("validation error")
 
-func NewValidationError(detailMsg string) error {
-	return fmt.Errorf("%w: %s", ErrValidation, detailMsg)
+func NewValidationError(position string, message string, actual string) error {
+	return fmt.Errorf(
+		"%w: %s",
+		ErrValidation,
+		fmt.Sprintf("%s Found: \"%s\" on %s", message, actual, position),
+	)
 }
