@@ -158,7 +158,7 @@ func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
 			return nil, "", err
 		}
 
-		handler = NewHandleTemplate(
+		handler = NewHandleCommon(
 			handler,
 			route.Response.ContentType,
 			route.Response.Status,

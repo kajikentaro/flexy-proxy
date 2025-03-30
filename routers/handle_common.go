@@ -7,7 +7,7 @@ import (
 	"github.com/kajikentaro/flexy-proxy/models"
 )
 
-func NewHandleTemplate(handler models.Handler, contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string) models.Handler {
+func NewHandleCommon(handler models.Handler, contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string) models.Handler {
 	return &HandleTemplate{
 		handler:                handler,
 		contentType:            contentType,
