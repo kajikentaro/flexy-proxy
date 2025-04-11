@@ -135,8 +135,8 @@ The following commands create a private key (`server.key`) and a certificate (`s
 
 ```
 openssl genrsa -out server.key
-openssl req -new -key server.key -out server.csr -subj "/C=JP/ST=Tokyo/L=Minato/O=Example Company/OU=IT Department/CN=example.com"
-openssl x509 -req -days 3650 -signkey server.key -in server.csr -out server.crt
+openssl req -x509 -new -nodes -key server.key -sha256 -days 3650 -out server.pem -subj "/C=JP/ST=Tokyo/L=Minato/O=Example Company/OU=IT Department/CN=example.com"
+openssl x509 -outform der -in server.pem -out server.crt
 ```
 
 Specify the certificates in the YAML file as follows:
