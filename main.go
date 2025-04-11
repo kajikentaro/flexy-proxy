@@ -48,7 +48,7 @@ func testRoute(customConfigPath string, testUrl string) error {
 		return err
 	}
 
-	handler, matchedUrl, err := proxyConfig.Router.GetHandler(parsedUrl)
+	handler, matchedUrl, err := proxyConfig.Router.GetRoundTripper(parsedUrl)
 
 	if errors.Is(err, models.ErrRouteNotFound) {
 		return fmt.Errorf("route not found")

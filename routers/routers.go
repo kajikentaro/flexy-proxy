@@ -122,9 +122,9 @@ type route struct {
 	parsedTransformCommand *[]string
 }
 
-func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, error) {
+func (r *router) getMainRoundTripper(route route, reqUrl *url.URL) (models.RoundTripper, error) {
 	if route.Response.Content != nil {
-		h := NewHandleContent(*route.Response.Content)
+		h := NewContentResponder(*route.Response.Content)
 		return h, nil
 	}
 
@@ -133,27 +133,27 @@ func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, e
 		if err != nil {
 			return nil, err
 		}
-		h := NewHandleReverseProxy(newUrl, route.proxyUrl)
+		h := NewReverseProxyTransport(newUrl, route.proxyUrl)
 		return h, nil
 	}
 
 	if route.Response.File != nil {
-		h := NewHandleFile(*route.Response.File)
+		h := NewFileResponder(*route.Response.File)
 		return h, nil
 	}
 
 	// by default, return this
-	h := NewHandleReverseProxy(reqUrl, route.proxyUrl)
+	h := NewReverseProxyTransport(reqUrl, route.proxyUrl)
 	return h, nil
 }
 
-func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
+func (r *router) GetRoundTripper(reqUrl *url.URL) (models.RoundTripper, string, error) {
 	for _, route := range r.routes {
 		if !isUrlSame(reqUrl, route) {
 			continue
 		}
 
-		handler, err := r.getMainHandler(route, reqUrl)
+		handler, err := r.getMainRoundTripper(route, reqUrl)
 		if err != nil {
 			return nil, "", err
 		}

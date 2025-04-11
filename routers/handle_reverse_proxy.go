@@ -3,25 +3,30 @@ package routers
 import (
 	"crypto/tls"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 
 	"github.com/kajikentaro/flexy-proxy/models"
 )
 
-func NewHandleReverseProxy(forwardUrl *url.URL, proxyUrl *url.URL) models.Handler {
-	return &ReverseProxyHandle{
+func NewReverseProxyTransport(forwardUrl *url.URL, proxyUrl *url.URL) models.RoundTripper {
+	return &ReverseProxyTransport{
 		forwardUrl: forwardUrl,
 		proxyUrl:   proxyUrl,
 	}
 }
 
-type ReverseProxyHandle struct {
+type ReverseProxyTransport struct {
 	forwardUrl *url.URL
 	proxyUrl   *url.URL
 }
 
-func (c *ReverseProxyHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	rr := r.Clone(r.Context())
+	rr.URL = c.forwardUrl
+	// NOTE:
+	// we should update host manually; otherwise, the original host remains
+	rr.Host = c.forwardUrl.Host
+
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	if c.proxyUrl != nil {
@@ -30,25 +35,19 @@ func (c *ReverseProxyHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	proxy := &httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			req.URL = c.forwardUrl
-		},
-		Transport: t,
+	res, err := t.RoundTrip(rr)
+	if err != nil {
+		return nil, err
 	}
 
-	rr := r.Clone(r.Context())
-	// NOTE:
-	// we should update host manually; otherwise, the original host remains
-	rr.Host = c.forwardUrl.Host
-	proxy.ServeHTTP(w, rr)
+	return res, nil
 }
 
-func (c *ReverseProxyHandle) GetType() string {
+func (c *ReverseProxyTransport) GetType() string {
 	return "reverse proxy"
 }
 
-func (c *ReverseProxyHandle) GetResponseInfo() map[string]string {
+func (c *ReverseProxyTransport) GetResponseInfo() map[string]string {
 	proxy := "None"
 	if c.proxyUrl != nil {
 		proxy = c.proxyUrl.String()

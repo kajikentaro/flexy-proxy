@@ -1,30 +1,44 @@
 package routers
 
 import (
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/kajikentaro/flexy-proxy/models"
 )
 
-func NewHandleFile(filePath string) models.Handler {
-	return &FileHandle{
+func NewFileResponder(filePath string) models.RoundTripper {
+	return &FileResponder{
 		filePath: filePath,
 	}
 }
 
-type FileHandle struct {
+type FileResponder struct {
 	filePath string
 }
 
-func (c *FileHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, c.filePath)
+func (c *FileResponder) RoundTrip(r *http.Request) (*http.Response, error) {
+	file, err := os.Open(c.filePath)
+	if err != nil {
+		return nil, err
+	}
+	res := &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     make(http.Header),
+		Body:       file,
+	}
+	ctype := mime.TypeByExtension(filepath.Ext(c.filePath))
+	res.Header.Set("Content-Type", ctype)
+	return res, nil
 }
 
-func (c *FileHandle) GetType() string {
+func (c *FileResponder) GetType() string {
 	return "file"
 }
 
-func (c *FileHandle) GetResponseInfo() map[string]string {
+func (c *FileResponder) GetResponseInfo() map[string]string {
 	return map[string]string{
 		"file path": c.filePath,
 	}

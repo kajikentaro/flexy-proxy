@@ -7,8 +7,8 @@ import (
 	"github.com/kajikentaro/flexy-proxy/models"
 )
 
-func NewHandleCommon(handler models.Handler, contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string) models.Handler {
-	return &HandleTemplate{
+func NewHandleCommon(handler models.RoundTripper, contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string) models.RoundTripper {
+	return &CommonWrapper{
 		handler:                handler,
 		contentType:            contentType,
 		statusCode:             statusCode,
@@ -17,41 +17,50 @@ func NewHandleCommon(handler models.Handler, contentType string, statusCode int,
 	}
 }
 
-type HandleTemplate struct {
-	handler                models.Handler
+type CommonWrapper struct {
+	handler                models.RoundTripper
 	statusCode             int
 	contentType            string
 	headers                map[string]string
 	parsedTransformCommand *[]string
 }
 
-func (h *HandleTemplate) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *CommonWrapper) RoundTrip(r *http.Request) (*http.Response, error) {
+	var res *http.Response
+	var err error
+
 	if h.parsedTransformCommand == nil {
-		h.handler.ServeHTTP(w, r)
+		res, err = h.handler.RoundTrip(r)
 	} else {
 		transform := middlewares.NewTransform(h.parsedTransformCommand)
-		transform.Middleware(h.handler).ServeHTTP(w, r)
+		res, err = transform.Middleware(h.handler).RoundTrip(r)
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	if h.contentType != "" {
 		// only if the contentType is specified, overwrite
-		w.Header().Set("Content-Type", h.contentType)
+		res.Header.Set("Content-Type", h.contentType)
 	}
 
 	if h.statusCode != 0 {
 		// only if the statusCode is specified, overwrite
-		w.WriteHeader(h.statusCode)
+		res.StatusCode = h.statusCode
 	}
 
 	for v, k := range h.headers {
-		w.Header().Set(v, k)
+		res.Header.Set(v, k)
 	}
+
+	return res, nil
 }
 
-func (h *HandleTemplate) GetType() string {
+func (h *CommonWrapper) GetType() string {
 	return h.handler.GetType()
 }
 
-func (h *HandleTemplate) GetResponseInfo() map[string]string {
+func (h *CommonWrapper) GetResponseInfo() map[string]string {
 	return h.handler.GetResponseInfo()
 }
