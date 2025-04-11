@@ -14,6 +14,8 @@ import (
 	"github.com/kajikentaro/flexy-proxy/utils"
 )
 
+var SSE_DURATION = 1 * time.Second
+
 func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Logger) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/path/", func(w http.ResponseWriter, r *http.Request) {
@@ -23,6 +25,16 @@ func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Log
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/csv")
 		fmt.Fprintf(w, "hello,world")
+	})
+	mux.HandleFunc("/sse", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		for i := 0; i < 5; i++ {
+			fmt.Fprintf(w, "data: SSE message %d\n\n", i)
+			w.(http.Flusher).Flush()
+			time.Sleep(SSE_DURATION)
+		}
 	})
 
 	srv := &http.Server{
