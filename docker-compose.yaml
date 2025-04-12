@@ -1,0 +1,7 @@
+services:
+  dev:
+    image: golang:1.21.4-bullseye
+    volumes:
+      - ./:/app
+    working_dir: /app
+    tty: true

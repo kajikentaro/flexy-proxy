@@ -1,32 +1,38 @@
 package routers
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 
 	"github.com/kajikentaro/flexy-proxy/models"
 )
 
-func NewHandleContent(body string) models.Handler {
-	return &ContentHandle{
+func NewContentResponder(body string) models.RoundTripper {
+	return &ContentResponder{
 		body: body,
 	}
 }
 
-type ContentHandle struct {
+type ContentResponder struct {
 	body string
 }
 
-func (c *ContentHandle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(c.body))
-	w.WriteHeader(200)
-	w.Header().Set("Content-Type", "text/plain")
+func (c *ContentResponder) RoundTrip(r *http.Request) (*http.Response, error) {
+	res := &http.Response{
+		StatusCode: http.StatusOK,
+		Header:     make(http.Header),
+		Body:       io.NopCloser(bytes.NewReader([]byte(c.body))),
+	}
+	res.Header.Set("Content-Type", "text/plain")
+	return res, nil
 }
 
-func (c *ContentHandle) GetType() string {
+func (c *ContentResponder) GetType() string {
 	return "content"
 }
 
-func (c *ContentHandle) GetResponseInfo() map[string]string {
+func (c *ContentResponder) GetResponseInfo() map[string]string {
 	return map[string]string{
 		"content": c.body,
 	}

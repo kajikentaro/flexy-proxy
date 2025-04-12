@@ -2,23 +2,25 @@ package routers
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 	"regexp"
 
 	"github.com/google/shlex"
+	"github.com/kajikentaro/flexy-proxy/middlewares"
 	"github.com/kajikentaro/flexy-proxy/models"
 )
 
 type router struct {
-	routes []route
+	routes []parsedRoute
 }
 
-func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]route, error) {
-	var routes []route
+func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]parsedRoute, error) {
+	var routes []parsedRoute
 
 	for _, inR := range rawRoutes {
 		inR := inR
-		newR := route{
+		newR := parsedRoute{
 			Route: &inR,
 		}
 
@@ -66,7 +68,7 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]route, error) {
 	return routes, nil
 }
 
-func validate(routes []route, shouldDecryptHttps bool) error {
+func validate(routes []parsedRoute, shouldDecryptHttps bool) error {
 	for i, r := range routes {
 		pos := fmt.Sprint("route.", i)
 		if r.parsedUrl.Scheme != "http" && r.parsedUrl.Scheme != "https" {
@@ -114,7 +116,7 @@ func GenRouter(routes []models.Route, defaultProxy *url.URL, shouldDecryptHttps 
 	return &router{routes: parsedRoutes}, nil
 }
 
-type route struct {
+type parsedRoute struct {
 	parsedUrl *url.URL
 	regexUrl  *regexp.Regexp
 	proxyUrl  *url.URL
@@ -122,9 +124,9 @@ type route struct {
 	parsedTransformCommand *[]string
 }
 
-func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, error) {
+func (r *router) getMainRoundTripper(route *parsedRoute, reqUrl *url.URL) (models.RoundTripper, error) {
 	if route.Response.Content != nil {
-		h := NewHandleContent(*route.Response.Content)
+		h := NewContentResponder(*route.Response.Content)
 		return h, nil
 	}
 
@@ -133,45 +135,73 @@ func (r *router) getMainHandler(route route, reqUrl *url.URL) (models.Handler, e
 		if err != nil {
 			return nil, err
 		}
-		h := NewHandleReverseProxy(newUrl, route.proxyUrl)
+		h := NewReverseProxyTransport(newUrl, route.proxyUrl)
 		return h, nil
 	}
 
 	if route.Response.File != nil {
-		h := NewHandleFile(*route.Response.File)
+		h := NewFileResponder(*route.Response.File)
 		return h, nil
 	}
 
 	// by default, return this
-	h := NewHandleReverseProxy(reqUrl, route.proxyUrl)
+	h := NewReverseProxyTransport(reqUrl, route.proxyUrl)
 	return h, nil
 }
 
-func (r *router) GetHandler(reqUrl *url.URL) (models.Handler, string, error) {
-	for _, route := range r.routes {
-		if !isUrlSame(reqUrl, route) {
-			continue
-		}
-
-		handler, err := r.getMainHandler(route, reqUrl)
-		if err != nil {
-			return nil, "", err
-		}
-
-		handler = NewHandleTemplate(
-			handler,
-			route.Response.ContentType,
-			route.Response.Status,
-			route.Response.Headers,
-			route.parsedTransformCommand,
-		)
-
-		return handler, route.Url, nil
+func (r *router) GetMatchedRoute(url *url.URL) (models.Route, error) {
+	parsedRoute, err := r.getMatchedParsedRoute(url)
+	if err != nil {
+		return models.Route{}, err
 	}
-	return nil, "", models.ErrRouteNotFound
+	return *parsedRoute.Route, nil
 }
 
-func isUrlSame(in *url.URL, route route) bool {
+func (r *router) getMatchedParsedRoute(url *url.URL) (*parsedRoute, error) {
+	for _, route := range r.routes {
+		if !isUrlSame(url, route) {
+			continue
+		}
+		return &route, nil
+	}
+	return nil, models.ErrRouteNotFound
+}
+
+func (r *router) TryRoundTrip(req *http.Request) (map[string]string, *http.Response, error) {
+	reqUrl := req.URL
+	route, err := r.getMatchedParsedRoute(reqUrl)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	middleware := middlewares.NewCommonMiddleware(
+		route.Response.ContentType,
+		route.Response.Status,
+		route.Response.Headers,
+		route.parsedTransformCommand,
+	)
+
+	main, err := r.getMainRoundTripper(route, reqUrl)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	res, err := middleware.Middleware(main).RoundTrip(req)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	info := main.GetResponseInfo()
+	info["matched_url"] = reqUrl.String()
+	info["type"] = main.GetType()
+
+	res.Header.Add("flexy-proxy", fmt.Sprintf("matched route: %s", route.Url))
+	res.Request = req
+
+	return info, res, nil
+}
+
+func isUrlSame(in *url.URL, route parsedRoute) bool {
 	if route.Regex {
 		return route.regexUrl.MatchString(in.String())
 	}

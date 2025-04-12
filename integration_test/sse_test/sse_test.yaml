@@ -1,0 +1,6 @@
+routes:
+  - url: "http://sample-sse.test/sse"
+    response:
+      rewrite:
+        proxy: "http://localhost:8092/sse"
+

@@ -3,6 +3,7 @@ package middlewares
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -18,39 +19,28 @@ type Transform struct {
 	command *[]string
 }
 
-func (t *Transform) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		nextResponse := &responseWriter{ResponseWriter: w}
-
+func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
+	return roundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		// NOTE: if the response body is compressed, we can't use string replacement commands like 'sed'.
 		r.Header.Del("Accept-Encoding")
 
-		next.ServeHTTP(nextResponse, r)
+		res, err := next.RoundTrip(r)
+		if err != nil {
+			return nil, err
+		}
 
 		cmd := exec.Command((*t.command)[0], (*t.command)[1:]...)
-		cmd.Stdin = &nextResponse.body
+		cmd.Stdin = res.Body
 
 		var stdout bytes.Buffer
 		cmd.Stdout = &stdout
 		var stderr bytes.Buffer
 		cmd.Stderr = &stderr
 		if err := cmd.Run(); err != nil {
-			http.Error(w, fmt.Sprintf("Failed to execute command: '%s'\nError Log: \n%s", strings.Join((*t.command), " "), stderr.String()), http.StatusInternalServerError)
-			return
+			return nil, fmt.Errorf("failed to execute command: '%s'\nError Log: \n%s", strings.Join((*t.command), " "), stderr.String())
 		}
 
-		_, err := w.Write(stdout.Bytes())
-		if err != nil {
-			http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		}
+		res.Body = io.NopCloser(&stdout)
+		return res, nil
 	})
-}
-
-type responseWriter struct {
-	http.ResponseWriter
-	body bytes.Buffer
-}
-
-func (w *responseWriter) Write(b []byte) (int, error) {
-	return w.body.Write(b)
 }
