@@ -7,6 +7,7 @@ import (
 
 	"github.com/kajikentaro/flexy-proxy/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIsRegexp(t *testing.T) {
@@ -82,4 +83,44 @@ func mustParseURL(t *testing.T, raw string) *url.URL {
 		t.Fatalf("Invalid test URL: %s", raw)
 	}
 	return u
+}
+
+func TestGetMatchedRoute(t *testing.T) {
+	routes := []models.Route{
+		{
+			Url: "http://example.test",
+		},
+		{
+			Url: "https://secure.test",
+		},
+		{
+			Url: "http://example.test/path",
+		},
+		{
+			// same as above. should be ignored
+			Url: "http://example.test/path",
+		},
+	}
+
+	router, err := GenRouter(routes, nil, true)
+	require.NoError(t, err)
+
+	tests := []struct {
+		input    string
+		expected models.Route
+	}{
+		{"http://example.test", routes[0]},
+		{"https://secure.test", routes[1]},
+		{"http://example.test/path", routes[2]},
+		{"http://example.test/path", routes[2]},
+	}
+
+	for _, test := range tests {
+		t.Run(test.input, func(t *testing.T) {
+			parsedInput := mustParseURL(t, test.input)
+			matchedRoute, err := router.GetMatchedRoute(parsedInput)
+			require.NoError(t, err)
+			assert.Equal(t, test.expected, matchedRoute)
+		})
+	}
 }
