@@ -36,7 +36,7 @@ func TestIsRegexp(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	t.Run("Success case", func(t *testing.T) {
-		routes := []route{
+		routes := []parsedRoute{
 			{parsedUrl: mustParseURL(t, "http://example.com")},
 			{parsedUrl: mustParseURL(t, "https://secure.com")},
 		}
@@ -45,7 +45,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("Invalid scheme (not http or https)", func(t *testing.T) {
-		routes := []route{
+		routes := []parsedRoute{
 			{parsedUrl: mustParseURL(t, "ftp://example.com"), Route: &models.Route{Url: "ftp://example.com"}},
 		}
 		err := validate(routes, true)
@@ -54,7 +54,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("Invalid URL (empty hostname)", func(t *testing.T) {
-		routes := []route{
+		routes := []parsedRoute{
 			{parsedUrl: mustParseURL(t, "http:///"), Route: &models.Route{Url: "http:///"}},
 		}
 		err := validate(routes, true)
@@ -63,7 +63,7 @@ func TestValidate(t *testing.T) {
 	})
 
 	t.Run("Regexp condition (shouldDecryptHttps=false && regexUrl!=nil && isRegexp=true)", func(t *testing.T) {
-		routes := []route{
+		routes := []parsedRoute{
 			{
 				parsedUrl: mustParseURL(t, "http://regexp.example.com"),
 				regexUrl:  regexp.MustCompile(".*example.*"),

@@ -44,9 +44,3 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 		return res, nil
 	})
 }
-
-type roundTripperFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
-	return f(r)
-}

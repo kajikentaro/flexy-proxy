@@ -53,7 +53,7 @@ func (c *ReverseProxyTransport) GetResponseInfo() map[string]string {
 		proxy = c.proxyUrl.String()
 	}
 	return map[string]string{
-		"forward url": c.forwardUrl.String(),
+		"forward_url": c.forwardUrl.String(),
 		"proxy":       proxy,
 	}
 }

@@ -40,6 +40,6 @@ func (c *FileResponder) GetType() string {
 
 func (c *FileResponder) GetResponseInfo() map[string]string {
 	return map[string]string{
-		"file path": c.filePath,
+		"file_path": c.filePath,
 	}
 }

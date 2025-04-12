@@ -11,6 +11,7 @@ import (
 	"github.com/kajikentaro/flexy-proxy/proxy"
 	"github.com/kajikentaro/flexy-proxy/utils"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 // this will be specified like:
@@ -48,21 +49,19 @@ func testRoute(customConfigPath string, testUrl string) error {
 		return err
 	}
 
-	handler, matchedUrl, err := proxyConfig.Router.GetRoundTripper(parsedUrl)
-
+	route, err := proxyConfig.Router.GetMatchedRoute(parsedUrl)
 	if errors.Is(err, models.ErrRouteNotFound) {
 		return fmt.Errorf("route not found")
-	}
-	if err != nil {
+	} else if err != nil {
 		return err
 	}
 
-	fmt.Println("URL:", matchedUrl)
-	fmt.Println("Type:", handler.GetType())
-	fmt.Println("Info:")
-	for key, val := range handler.GetResponseInfo() {
-		fmt.Printf("    %s: %s\n", key, val)
+	yaml, err := yaml.Marshal(route)
+	if err != nil {
+		return err
 	}
+	fmt.Printf("Matched Route YAML:\n\n%s\n", string(yaml))
+
 	return nil
 }
 

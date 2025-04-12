@@ -37,7 +37,7 @@ func removeSuffix443FromHostName(u url.URL) *url.URL {
 func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	req.URL = removeSuffix443FromHostName(*req.URL)
 
-	handler, matchedUrl, err := p.router.GetRoundTripper(req.URL)
+	successInfo, res, err := p.router.TryRoundTrip(req)
 	// if the request doesn't match any routes
 	if errors.Is(err, models.ErrRouteNotFound) {
 		if p.defaultRoute.DenyAccess {
@@ -45,28 +45,17 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 			return req, goproxy.NewResponse(req, goproxy.ContentTypeText, http.StatusForbidden, content)
 		}
 		return req, nil
-	}
-	if err != nil {
+	} else if err != nil {
 		return p.handleProxyRuntimeError(req, err)
 	}
 
 	// logging
-	args := []interface{}{
-		"request URL", req.URL.String(),
-		"matched URL", matchedUrl,
-		"type", handler.GetType(),
-	}
-	for k, v := range handler.GetResponseInfo() {
+	var args []interface{}
+	for k, v := range successInfo {
 		args = append(args, k, v)
 	}
 	p.logger.Info("request matched a route", args...)
 
-	res, err := handler.RoundTrip(req)
-	if err != nil {
-		return p.handleProxyRuntimeError(req, err)
-	}
-	res.Header.Add("flexy-proxy", fmt.Sprintf("matched URL: %s", matchedUrl))
-	res.Request = req
 	return req, res
 }
 
