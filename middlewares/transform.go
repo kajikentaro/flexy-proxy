@@ -57,17 +57,20 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 		cmd := exec.Command((*t.command)[0], (*t.command)[1:]...)
 		cmd.Env = append(os.Environ(), "REQ_BODY="+string(reqBody))
 		cmd.Stdin = res.Body
+		pr, pw := io.Pipe()
+		cmd.Stdout = pw
+		cmd.Stderr = pw
 
-		// cmd.Stderr = os.Stdout
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return nil, err
-		}
-		res.Body = stdout
+		res.Body = pr
 
 		if err := cmd.Start(); err != nil {
 			return nil, err
 		}
+
+		go func() {
+			cmd.Wait()
+			pw.Close()
+		}()
 		return res, nil
 	})
 }

@@ -59,3 +59,15 @@ func TestTransformStream(t *testing.T) {
 
 	test_utils.TestSSEStreams(t, res.Body, true)
 }
+
+func TestTransformStreamStdErr(t *testing.T) {
+	command := []string{"bash", "-c", "sed -u -e 's/data/DATA/g' >&2"}
+	transform := middlewares.NewTransform(&command)
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.test", nil)
+	res, err := transform.Middleware(dummyStream{}).RoundTrip(req)
+	require.NoError(t, err)
+	defer res.Body.Close()
+
+	test_utils.TestSSEStreams(t, res.Body, true)
+}
