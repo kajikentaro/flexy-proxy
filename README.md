@@ -131,7 +131,7 @@ routes:
 
 ## Certificates
 
-The following commands create a private key (`server.key`) and a certificate (`server.csr`). By specifying options, Flexy Proxy can use this private key and certificate to generate new certificates for the requested hostname and use them for communication. By installing the `server.csr` certificate on your PC or browser, responses from Flexy Proxy will be considered secure.
+The following commands create a private key (`server.key`) and a certificate (`server.csr`). By specifying options, Flexy Proxy can use this private key and certificate to generate new certificates for the requested hostname and use them for communication. By installing the `server.crt` certificate on your PC or browser, responses from Flexy Proxy will be considered secure.
 
 ```
 openssl genrsa -out server.key
@@ -142,6 +142,6 @@ openssl x509 -outform der -in server.pem -out server.crt
 Specify the certificates in the YAML file as follows:
 
 ```yaml
-certificate: "server.crt"
+certificate: "server.pem"
 certificate_key: "server.key"
 ```
