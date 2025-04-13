@@ -1,10 +1,8 @@
 package test
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -58,7 +56,7 @@ func TestSSEWithoutProxy(t *testing.T) {
 	assert.NoError(t, err)
 	defer res.Body.Close()
 
-	testSSEStreams(t, res.Body)
+	test_utils.TestSSEStreams(t, res.Body, false)
 }
 
 // test SSE communication with proxy but without rewrite
@@ -67,7 +65,7 @@ func TestSSEWithProxyWithoutRewrite(t *testing.T) {
 	assert.NoError(t, err)
 	defer res.Body.Close()
 
-	testSSEStreams(t, res.Body)
+	test_utils.TestSSEStreams(t, res.Body, false)
 }
 
 // test SSE communication with proxy and with rewrite
@@ -76,30 +74,14 @@ func TestSSEWithProxy(t *testing.T) {
 	assert.NoError(t, err)
 	defer res.Body.Close()
 
-	testSSEStreams(t, res.Body)
+	test_utils.TestSSEStreams(t, res.Body, false)
 }
 
-func testSSEStreams(t *testing.T, body io.ReadCloser) {
-	expectedOutput := []string{
-		"data: SSE message 0\n\n",
-		"data: SSE message 0\n\ndata: SSE message 1\n\n",
-		"data: SSE message 0\n\ndata: SSE message 1\n\ndata: SSE message 2\n\n",
-		"data: SSE message 0\n\ndata: SSE message 1\n\ndata: SSE message 2\n\ndata: SSE message 3\n\n",
-		"data: SSE message 0\n\ndata: SSE message 1\n\ndata: SSE message 2\n\ndata: SSE message 3\n\ndata: SSE message 4\n\n",
-	}
+// test SSE communication with proxy and with rewrite and transform commands
+func TestSSEWithTransform(t *testing.T) {
+	res, err := test_utils.Request(PROXY_URL, "http://sample-sse.test/sse-with-transform")
+	require.NoError(t, err)
+	defer res.Body.Close()
 
-	output := ""
-	go func() {
-		scanner := bufio.NewScanner(body)
-		for scanner.Scan() {
-			line := scanner.Text()
-			output += line + "\n"
-		}
-	}()
-
-	time.Sleep(test_utils.SSE_DURATION / 2)
-	for i := 0; i < 5; i++ {
-		require.Equal(t, expectedOutput[i], output)
-		time.Sleep(test_utils.SSE_DURATION)
-	}
+	test_utils.TestSSEStreams(t, res.Body, true)
 }

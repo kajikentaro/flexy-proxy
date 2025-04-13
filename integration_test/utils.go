@@ -1,17 +1,21 @@
 package test_utils
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"testing"
 	"time"
 
 	"github.com/kajikentaro/flexy-proxy/loggers"
 	"github.com/kajikentaro/flexy-proxy/proxy"
 	"github.com/kajikentaro/flexy-proxy/utils"
+	"github.com/stretchr/testify/require"
 )
 
 var SSE_DURATION = 1 * time.Second
@@ -122,4 +126,39 @@ func Request(proxyUrl *url.URL, targetUrl string) (*http.Response, error) {
 		},
 	}
 	return client.Get(targetUrl)
+}
+
+func TestSSEStreams(t *testing.T, actual io.ReadCloser, isCapital bool) {
+	var isCapitalToExpected = map[bool][]string{
+		false: {
+			"data: SSE message 0\n\n",
+			"data: SSE message 0\n\ndata: SSE message 1\n\n",
+			"data: SSE message 0\n\ndata: SSE message 1\n\ndata: SSE message 2\n\n",
+			"data: SSE message 0\n\ndata: SSE message 1\n\ndata: SSE message 2\n\ndata: SSE message 3\n\n",
+			"data: SSE message 0\n\ndata: SSE message 1\n\ndata: SSE message 2\n\ndata: SSE message 3\n\ndata: SSE message 4\n\n",
+		},
+		true: {
+			"DATA: SSE message 0\n\n",
+			"DATA: SSE message 0\n\nDATA: SSE message 1\n\n",
+			"DATA: SSE message 0\n\nDATA: SSE message 1\n\nDATA: SSE message 2\n\n",
+			"DATA: SSE message 0\n\nDATA: SSE message 1\n\nDATA: SSE message 2\n\nDATA: SSE message 3\n\n",
+			"DATA: SSE message 0\n\nDATA: SSE message 1\n\nDATA: SSE message 2\n\nDATA: SSE message 3\n\nDATA: SSE message 4\n\n",
+		},
+	}
+	expected := isCapitalToExpected[isCapital]
+
+	output := ""
+	go func() {
+		scanner := bufio.NewScanner(actual)
+		for scanner.Scan() {
+			line := scanner.Text()
+			output += line + "\n"
+		}
+	}()
+
+	time.Sleep(SSE_DURATION / 2)
+	for i := 0; i < 5; i++ {
+		require.Equal(t, expected[i], output)
+		time.Sleep(SSE_DURATION)
+	}
 }

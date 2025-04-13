@@ -1,4 +1,4 @@
-package middlewares
+package middlewares_test
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kajikentaro/flexy-proxy/middlewares"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -53,7 +54,7 @@ func TestTransformMiddleware(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			transform := NewTransform(&tt.command)
+			transform := middlewares.NewTransform(&tt.command)
 
 			req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader([]byte(tt.requestBody)))
 			req.Header.Set("Content-Type", tt.contentType)
@@ -71,7 +72,7 @@ func TestTransformMiddleware(t *testing.T) {
 
 func TestTransformMiddlewareErrorCase(t *testing.T) {
 	command := []string{"invalid_command"}
-	transform := NewTransform(&command)
+	transform := middlewares.NewTransform(&command)
 
 	// Test for error case when the command is invalid
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
@@ -84,7 +85,7 @@ func TestTransformMiddlewareErrorCase(t *testing.T) {
 
 func TestTransformMiddlewareLargeBody(t *testing.T) {
 	command := []string{"bash", "-c", "echo $REQ_BODY"}
-	transform := NewTransform(&command)
+	transform := middlewares.NewTransform(&command)
 
 	largeBody := bytes.Repeat([]byte("a"), 1024*1024+1)
 
@@ -103,7 +104,7 @@ func TestTransformMiddlewareLargeBody(t *testing.T) {
 
 func TestTransformMiddlewareNonTextContent(t *testing.T) {
 	command := []string{"bash", "-c", "echo $REQ_BODY"}
-	transform := NewTransform(&command)
+	transform := middlewares.NewTransform(&command)
 
 	// Test for non-text content handling
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader([]byte("binary data")))
