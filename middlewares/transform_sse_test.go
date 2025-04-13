@@ -49,7 +49,7 @@ func TestDummyStreamItself(t *testing.T) {
 }
 
 func TestTransformStream(t *testing.T) {
-	command := []string{"sed", "-E", "s/data/DATA/g"}
+	command := []string{"sed", "-u", "-e", "s/data/DATA/g"}
 	transform := middlewares.NewTransform(&command)
 
 	req := httptest.NewRequest(http.MethodGet, "http://example.test", nil)

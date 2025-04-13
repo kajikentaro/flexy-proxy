@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -59,15 +58,16 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 		cmd.Env = append(os.Environ(), "REQ_BODY="+string(reqBody))
 		cmd.Stdin = res.Body
 
-		var stdout bytes.Buffer
-		cmd.Stdout = &stdout
-		var stderr bytes.Buffer
-		cmd.Stderr = &stderr
-		if err := cmd.Run(); err != nil {
-			return nil, fmt.Errorf("failed to execute command: '%s'\nError Log: \n%s", strings.Join((*t.command), " "), stderr.String())
+		// cmd.Stderr = os.Stdout
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return nil, err
 		}
+		res.Body = stdout
 
-		res.Body = io.NopCloser(&stdout)
+		if err := cmd.Start(); err != nil {
+			return nil, err
+		}
 		return res, nil
 	})
 }
