@@ -174,7 +174,7 @@ func (r *router) TryRoundTrip(req *http.Request) (map[string]string, *http.Respo
 		return nil, nil, err
 	}
 
-	middleware := middlewares.NewCommonMiddleware(
+	common := middlewares.NewCommonMiddleware(
 		route.Response.ContentType,
 		route.Response.Status,
 		route.Response.Headers,
@@ -186,7 +186,7 @@ func (r *router) TryRoundTrip(req *http.Request) (map[string]string, *http.Respo
 		return nil, nil, err
 	}
 
-	res, err := middleware.Middleware(main).RoundTrip(req)
+	res, err := common.Middleware(main).RoundTrip(req)
 	if err != nil {
 		return nil, nil, err
 	}

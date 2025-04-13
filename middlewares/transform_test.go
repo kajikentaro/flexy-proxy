@@ -41,6 +41,14 @@ func TestTransformMiddleware(t *testing.T) {
 			command:        []string{"sed", "-E", "s/foo/bar/g"},
 			expectedOutput: "bar",
 		},
+		{
+			name:           "Log request body",
+			requestBody:    "test request body",
+			responseBody:   "foo",
+			contentType:    "text/plain",
+			command:        []string{"bash", "-c", "echo $REQ_BODY"},
+			expectedOutput: "test request body\n",
+		},
 	}
 
 	for _, tt := range tests {
@@ -72,4 +80,40 @@ func TestTransformMiddlewareErrorCase(t *testing.T) {
 	res, err := transform.Middleware(dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
 	assert.Error(t, err)
 	assert.Nil(t, res)
+}
+
+func TestTransformMiddlewareLargeBody(t *testing.T) {
+	command := []string{"bash", "-c", "echo $REQ_BODY"}
+	transform := NewTransform(&command)
+
+	largeBody := bytes.Repeat([]byte("a"), 1024*1024+1)
+
+	// Test for large body handling
+	req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader(largeBody))
+	req.Header.Set("Content-Type", "text/plain")
+
+	res, err := transform.Middleware(dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	resBody, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	errorMessage := "BODY env variable is only available for requests with Content-Length less than 1MB\n"
+	assert.Equal(t, errorMessage, string(resBody))
+}
+
+func TestTransformMiddlewareNonTextContent(t *testing.T) {
+	command := []string{"bash", "-c", "echo $REQ_BODY"}
+	transform := NewTransform(&command)
+
+	// Test for non-text content handling
+	req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader([]byte("binary data")))
+	req.Header.Set("Content-Type", "application/octet-stream")
+
+	res, err := transform.Middleware(dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	resBody, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	errorMessage := "BODY env variable is only available for text content types\n"
+	assert.Equal(t, errorMessage, string(resBody))
 }

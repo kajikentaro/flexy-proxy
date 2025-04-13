@@ -79,7 +79,7 @@ log_level: "INFO"
 always_mitm: true
 
 routes:
-  # if the request URL is "https://example.com/user/[user_id]/post/[post_id]",
+  # If the request URL is "https://example.com/user/[user_id]/post/[post_id]",
   # reverse proxy to "https://example.com/api?user=[user_id]&post=[post_id]".
   - url: "https://example.com/user/[^/]+/post/[^/]"
     regex: true
@@ -88,7 +88,7 @@ routes:
         from: '^https://example\\.com/user/([^/]+)/post/([^/]+)'
         to: "https://example.com/api?user=$1&post=$2"
         regex: true
-  # if the request URL is "https://example.com/not-found",
+  # If the request URL is "https://example.com/not-found",
   # return the content "not found" with 404 status code.
   - url: "https://example.com/not-found"
     regex: false
@@ -96,13 +96,13 @@ routes:
       content: "not found"
       content_type: "text/plain"
       status: 404
-  # if the request URL is "https://example.com/[any character].png",
+  # If the request URL is "https://example.com/[any character].png",
   # return the file: "./sample.png"
   - url: 'https://example.com/.*\.png'
     regex: true
     response:
       file: "sample.png"
-  # if the request URL is "https://example.com/proxy",
+  # If the request URL is "https://example.com/proxy",
   # reverse proxy to "https://example.com/api" using a specific proxy.
   - url: "https://example.com/proxy"
     regex: false
@@ -112,21 +112,27 @@ routes:
         to: "https://example.com/api"
         regex: false
         proxy: "http://proxy.example.com"
-  # if the request URL is "https://content.test",
-  # return the content "basic" with a custom header.
+  # If the request URL is "https://content.test",
+  # return the content "content XD" with a custom header.
   - url: "https://content.test"
     regex: false
     response:
-      content: "basic"
+      content: "content XD"
       headers:
         "Access-Control-Allow-Origin": "*"
-  # if the request URL is "https://content.test/",
-  # return the content "foo" transformed to "bar".
+  # If the request URL is "https://content.test/",
+  # transform the response body "foo" to "bar" using a sed command.
   - url: "https://content.test/"
     regex: false
     response:
-      content: "foo"
       transform: "sed -E 's/foo/bar/g'"
+  # If the request URL is "https://content.test/",
+  # log both the response content and request body to separate files.
+  # (the `REQ_BODY` environment variable will contain the request body)
+  - url: "https://content.test/"
+    regex: false
+    response:
+      transform: "bash -c 'tee -a ./response.txt ; echo $REQ_BODY >> ./request.txt';"
 ```
 
 ## Certificates
