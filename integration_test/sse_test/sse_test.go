@@ -1,13 +1,11 @@
 package test
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +13,7 @@ import (
 	"github.com/kajikentaro/flexy-proxy/loggers"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var PROXY_PORT_NUMBER = 8091
@@ -42,71 +41,47 @@ func TestMain(m *testing.M) {
 	// setup proxy server
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, "sse_test.yaml")
+		err := test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS, "sse_test.yaml")
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "failed to start a proxy server:", err)
+			os.Exit(1)
+		}
 		defer cancel()
 	}
 	m.Run()
 }
 
 func TestSSEWithoutProxy(t *testing.T) {
-	start := time.Now()
 	res, err := http.Get(SAMPLE_SERVER_URL + "/sse")
 	assert.NoError(t, err)
 	defer res.Body.Close()
 
-	scanner := bufio.NewScanner(res.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		duration := time.Since(start)
-		assert.Less(t, duration, SSE_TIMEOUT_DURATION)
-		assert.True(t, strings.Contains(line, "data: SSE message") || line == "", "unexpected line: %s", line)
-
-		start = time.Now()
-	}
-	assert.NoError(t, scanner.Err())
+	test_utils.TestSSEStreams(t, res.Body, false)
 }
 
 // test SSE communication with proxy but without rewrite
 func TestSSEWithProxyWithoutRewrite(t *testing.T) {
-
-	start := time.Now()
 	res, err := test_utils.Request(PROXY_URL, "http://localhost:8092/sse")
 	assert.NoError(t, err)
 	defer res.Body.Close()
 
-	scanner := bufio.NewScanner(res.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		duration := time.Since(start)
-		assert.Less(t, duration, SSE_TIMEOUT_DURATION)
-		assert.True(t, strings.Contains(line, "data: SSE message") || line == "", "unexpected line: %s", line)
-
-		start = time.Now()
-	}
-	assert.NoError(t, scanner.Err())
-
+	test_utils.TestSSEStreams(t, res.Body, false)
 }
 
 // test SSE communication with proxy and with rewrite
 func TestSSEWithProxy(t *testing.T) {
-	{
-		start := time.Now()
-		res, err := test_utils.Request(PROXY_URL, "http://sample-sse.test/sse")
-		assert.NoError(t, err)
-		defer res.Body.Close()
+	res, err := test_utils.Request(PROXY_URL, "http://sample-sse.test/sse")
+	assert.NoError(t, err)
+	defer res.Body.Close()
 
-		scanner := bufio.NewScanner(res.Body)
-		for scanner.Scan() {
-			line := scanner.Text()
+	test_utils.TestSSEStreams(t, res.Body, false)
+}
 
-			duration := time.Since(start)
-			assert.Less(t, duration, SSE_TIMEOUT_DURATION)
-			assert.True(t, strings.Contains(line, "data: SSE message") || line == "", "unexpected line: %s", line)
+// test SSE communication with proxy and with rewrite and transform commands
+func TestSSEWithTransform(t *testing.T) {
+	res, err := test_utils.Request(PROXY_URL, "http://sample-sse.test/sse-with-transform")
+	require.NoError(t, err)
+	defer res.Body.Close()
 
-			start = time.Now()
-		}
-		assert.NoError(t, scanner.Err())
-	}
+	test_utils.TestSSEStreams(t, res.Body, true)
 }

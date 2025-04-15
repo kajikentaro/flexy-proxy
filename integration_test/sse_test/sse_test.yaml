@@ -1,6 +1,12 @@
 routes:
   - url: "http://sample-sse.test/sse"
     response:
-      rewrite:
-        proxy: "http://localhost:8092/sse"
+      rewrite: "http://localhost:8092/sse"
 
+  - url: "http://sample-sse.test/sse-with-transform"
+    response:
+      rewrite: "http://localhost:8092/sse"
+      transform: "sed -u -e 's/data/DATA/'"
+      headers:
+        Content-Type: text/event-stream
+      
