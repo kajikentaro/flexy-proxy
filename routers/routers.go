@@ -15,10 +15,13 @@ type router struct {
 	routes []parsedRoute
 }
 
-func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]parsedRoute, error) {
+var regOrigin = regexp.MustCompile(`^https?://[^/]+`)
+
+func parse(rawRoutes []models.Route, defaultProxy *url.URL, shouldDecryptHttps bool) ([]parsedRoute, error) {
 	var routes []parsedRoute
 
-	for _, inR := range rawRoutes {
+	for i, inR := range rawRoutes {
+		pos := fmt.Sprint("route.", i)
 		inR := inR
 		newR := parsedRoute{
 			Route: &inR,
@@ -26,17 +29,53 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]parsedRoute, erro
 
 		if inR.Regex {
 			regexUrl, err := regexp.Compile(inR.Url)
+			if err != nil {
+				return nil, NewValidationError(pos, "Failed to compile regex: %s", inR.Url)
+			}
 			newR.regexUrl = regexUrl
+		} else {
+			parsedUrl, err := url.Parse(inR.Url)
 			if err != nil {
 				return nil, err
 			}
+			newR.parsedUrl = parsedUrl
 		}
 
-		parsedUrl, err := url.Parse(inR.Url)
+		getOrigin := func() (*origin, error) {
+			if shouldDecryptHttps {
+				return nil, nil
+			}
+
+			if !inR.Regex {
+				parsedUrl, err := url.Parse(inR.Url)
+				if err != nil {
+					return nil, err
+				}
+				return &origin{scheme: parsedUrl.Scheme, host: parsedUrl.Host}, nil
+			}
+
+			// `originStr` would be 'https://foo\.example\.com'
+			originStr := regOrigin.FindString(inR.Url)
+			if isRegexp(originStr) {
+				return nil, NewValidationError(pos, "Regular expressions are not allowed in the hostname when `always_mitm` is false.", originStr)
+			}
+			// `originPlained` would be 'https://foo.example.com'
+			originPlained, err := decodeRegexpEscape(originStr)
+			if err != nil {
+				return nil, NewValidationError(pos, fmt.Sprintf("Failed to decode regex: %s", err), originPlained)
+			}
+			url, err := url.Parse(originPlained)
+			if err != nil {
+				return nil, NewValidationError(pos, fmt.Sprintf("Failed to parse decoded regex: %s", err), originPlained)
+			}
+			return &origin{scheme: url.Scheme, host: url.Host}, err
+		}
+
+		origin, err := getOrigin()
 		if err != nil {
 			return nil, err
 		}
-		newR.parsedUrl = parsedUrl
+		newR.origin = origin
 
 		if inR.Response.Transform != "" {
 			parsedCommand, err := shlex.Split(inR.Response.Transform)
@@ -68,34 +107,23 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]parsedRoute, erro
 	return routes, nil
 }
 
+// todo: unused function. to be removed
 func validate(routes []parsedRoute, shouldDecryptHttps bool) error {
 	for i, r := range routes {
 		pos := fmt.Sprint("route.", i)
 		if r.parsedUrl.Scheme != "http" && r.parsedUrl.Scheme != "https" {
-			return NewValidationError(
-				pos,
-				"URL Scheme must be 'http' or 'https'.",
-				r.Url,
-			)
+			return NewValidationError(pos, "URL Scheme must be 'http' or 'https'.", r.Url)
 		}
 
 		if r.parsedUrl.Host == "" {
-			return NewValidationError(
-				pos,
-				"Invalid URL.",
-				r.Url,
-			)
+			return NewValidationError(pos, "Invalid URL.", r.Url)
 		}
 
 		isRegexpEnabled := r.regexUrl != nil
 		if !shouldDecryptHttps &&
 			isRegexpEnabled &&
 			isRegexp(r.parsedUrl.Host) {
-			return NewValidationError(
-				pos,
-				"Regular expressions are not allowed in the hostname when `always_mitm` is disabled.",
-				r.parsedUrl.Host,
-			)
+			return NewValidationError(pos, "Regular expressions are not allowed in the hostname when `always_mitm` is false.", r.parsedUrl.Host)
 		}
 	}
 
@@ -103,12 +131,7 @@ func validate(routes []parsedRoute, shouldDecryptHttps bool) error {
 }
 
 func GenRouter(routes []models.Route, defaultProxy *url.URL, shouldDecryptHttps bool) (models.Router, error) {
-	parsedRoutes, err := parse(routes, defaultProxy)
-	if err != nil {
-		return nil, err
-	}
-
-	err = validate(parsedRoutes, shouldDecryptHttps)
+	parsedRoutes, err := parse(routes, defaultProxy, shouldDecryptHttps)
 	if err != nil {
 		return nil, err
 	}
@@ -116,12 +139,22 @@ func GenRouter(routes []models.Route, defaultProxy *url.URL, shouldDecryptHttps 
 	return &router{routes: parsedRoutes}, nil
 }
 
+type origin struct {
+	scheme string
+	host   string
+}
+
 type parsedRoute struct {
-	parsedUrl *url.URL
-	regexUrl  *regexp.Regexp
-	proxyUrl  *url.URL
+	proxyUrl *url.URL
 	*models.Route
 	parsedTransformCommand *[]string
+
+	// one side is nil
+	parsedUrl *url.URL
+	regexUrl  *regexp.Regexp
+
+	// if `always_mitm` is true, this will be nil
+	origin *origin
 }
 
 func (r *router) getMainRoundTripper(route *parsedRoute, reqUrl *url.URL) (models.RoundTripper, error) {
@@ -232,16 +265,8 @@ func isUrlSame(in *url.URL, route parsedRoute) bool {
 func (r *router) GetHttpsHostList() []string {
 	var res []string
 	for _, route := range r.routes {
-		u := route.parsedUrl
-		if u.Scheme == "https" {
-			var host string
-			if u.Port() == "" {
-				host = fmt.Sprintf("%s:443", u.Host)
-			} else {
-				host = u.Host
-			}
-			res = append(res, host)
-		}
+		host := fmt.Sprintf("%s:443", route.origin.host)
+		res = append(res, host)
 	}
 	return res
 }
