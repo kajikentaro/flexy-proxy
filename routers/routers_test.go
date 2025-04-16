@@ -124,3 +124,10 @@ func TestGetMatchedRoute(t *testing.T) {
 		})
 	}
 }
+
+// https://github.com/kajikentaro/flexy-proxy/issues/7
+func TestAlwaysMitmWithRegex(t *testing.T) {
+	_, err := GenRouter([]models.Route{{Url: "https://example\\.test", Regex: true}}, nil, true)
+	require.NoError(t, err)
+	// todo add more tests
+}
