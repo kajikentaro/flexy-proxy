@@ -11,6 +11,7 @@ import (
 	"github.com/kajikentaro/flexy-proxy/loggers"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var PROXY_PORT_NUMBER_1 = 8083
@@ -28,26 +29,26 @@ func TestDefaultRoute(t *testing.T) {
 	// if a request url does not match urls on config file, it goes 2nd proxy
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, "1st_proxy_default.yaml")
+		require.NoError(t, test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, "1st_proxy_default.yaml"))
 		defer cancel()
 	}
 
 	// setup 2nd proxy
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, "2nd_proxy.yaml")
+		require.NoError(t, test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, "2nd_proxy.yaml"))
 		defer cancel()
 	}
 
 	{
 		// should use default proxy if the request is out of routes
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "https://out-of-route.test/")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "1,2,3", string(body))
 	}
@@ -55,24 +56,24 @@ func TestDefaultRoute(t *testing.T) {
 	{
 		// should use default proxy if no additional proxy is specified
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "https://on-route.test")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "1,2,3", string(body))
 	}
 	{
 		// should use default proxy if only use transform
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "https://only-transform.test")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "replaced", string(body))
 	}
@@ -83,14 +84,14 @@ func TestRequestDenial(t *testing.T) {
 	// if a request url does not match urls on config file, it goes 2nd proxy
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, "1st_proxy_deny.yaml")
+		require.NoError(t, test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, "1st_proxy_deny.yaml"))
 		defer cancel()
 	}
 
 	// setup 2nd proxy
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, "2nd_proxy.yaml")
+		require.NoError(t, test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, "2nd_proxy.yaml"))
 		defer cancel()
 	}
 
@@ -98,7 +99,7 @@ func TestRequestDenial(t *testing.T) {
 	// if a request url is https, the proxy returns ERR_EMPTY_RESPONSE
 	{
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "https://out-of-route-url.test")
 
 		var urlError *url.Error
@@ -110,14 +111,14 @@ func TestRequestDenial(t *testing.T) {
 	// if a request url is http, the proxy returns ERR_EMPTY_RESPONSE
 	{
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "http://out-of-route-url.test")
 
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 403, res.StatusCode)
 
 		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "http://out-of-route-url.test/ is out of routes", string(body))
 	}
 }
@@ -127,36 +128,36 @@ func TestProxyOnEachRoutes(t *testing.T) {
 	// if a request url match, it goes 2nd proxy
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, "1st_proxy_on_routes.yaml")
+		require.NoError(t, test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, "1st_proxy_on_routes.yaml"))
 		defer cancel()
 	}
 
 	// setup 2nd proxy
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, "2nd_proxy.yaml")
+		require.NoError(t, test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, "2nd_proxy.yaml"))
 		defer cancel()
 	}
 
 	{
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "https://2nd-proxy.test/")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "1,2,3", string(body))
 	}
 	{
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "https://go-proxy.test/")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "1,2,3", string(body))
 	}
@@ -166,14 +167,14 @@ func TestOverwriteProxy(t *testing.T) {
 	// setup 1st proxy
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, "1st_proxy_overwrite_default.yaml")
+		require.NoError(t, test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_1, "1st_proxy_overwrite_default.yaml"))
 		defer cancel()
 	}
 
 	// setup 2nd proxy
 	{
 		ctx, cancel := context.WithCancel(context.Background())
-		test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, "2nd_proxy.yaml")
+		require.NoError(t, test_utils.StartProxyServer(ctx, PROXY_HTTP_ADDRESS_2, "2nd_proxy.yaml"))
 		defer cancel()
 	}
 
@@ -181,19 +182,19 @@ func TestOverwriteProxy(t *testing.T) {
 		// sample http server
 		ctx, cancel := context.WithCancel(context.Background())
 		err := test_utils.StartSampleHttpServer(ctx, SAMPLE_SERVER_HTTP_ADDRESS, loggers.GenLogger(nil))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer cancel()
 	}
 
 	{
 		// should overwrite the default proxy with another proxy
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "https://overwrite-proxy.test/")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "1,2,3", string(body))
 	}
@@ -201,12 +202,12 @@ func TestOverwriteProxy(t *testing.T) {
 	{
 		// should not use default proxy and access the internet directly
 		proxyUrl, err := url.Parse(PROXY_URL_1)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		res, err := test_utils.Request(proxyUrl, "https://remove-proxy.test/")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		defer res.Body.Close()
 		body, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "hello,world", string(body))
 	}
