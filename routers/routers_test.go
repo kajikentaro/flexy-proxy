@@ -42,15 +42,13 @@ func TestParse(t *testing.T) {
 			{Url: "http://example.com"},
 			{Url: "https://secure.com"},
 		}
-		actual, err := parse(routes, nil, true)
+		actual, err := parse(routes, nil)
 		require.NoError(t, err)
 
 		assert.Nil(t, actual[0].regexUrl)
-		assert.Nil(t, actual[0].origin)
 		assert.NotNil(t, actual[0].parsedUrl)
 
 		assert.Nil(t, actual[1].regexUrl)
-		assert.Nil(t, actual[1].origin)
 		assert.NotNil(t, actual[1].parsedUrl)
 	})
 
@@ -59,7 +57,7 @@ func TestParse(t *testing.T) {
 			{Url: "ftp://example.com"},
 			{Url: "example.com"},
 		}
-		actual, err := parse(routes, nil, true)
+		actual, err := parse(routes, nil)
 		assert.ErrorContains(t, err, "URL must start with https:// or http://")
 		assert.Nil(t, actual)
 	})
@@ -69,19 +67,22 @@ func TestParse(t *testing.T) {
 			{Url: "http://"},
 			{Url: "https://"},
 		}
-		actual, err := parse(routes, nil, false)
-		assert.ErrorContains(t, err, "Invalid URL.")
+		actual, err := parse(routes, nil)
+		assert.ErrorContains(t, err, "URL must have a host")
 		assert.Nil(t, actual)
 	})
 
-	t.Run("Regexp condition (shouldDecryptHttps=false && regexUrl!=nil && isRegexp=true)", func(t *testing.T) {
+}
+
+func TestCalcHttpsHostList(t *testing.T) {
+	t.Run("Regexp condition (shouldDecryptHttps:false && isRegexp:true)", func(t *testing.T) {
 		routes := []models.Route{
 			{
 				Url:   "http://.*example.*",
 				Regex: true,
 			},
 		}
-		actual, err := parse(routes, nil, false)
+		actual, err := calcHttpsHostList(routes)
 		assert.ErrorContains(t, err, "Regular expressions are not allowed in the hostname when `always_mitm` is false.")
 		assert.Nil(t, actual)
 	})
@@ -138,7 +139,9 @@ func TestGetMatchedRoute(t *testing.T) {
 
 // https://github.com/kajikentaro/flexy-proxy/issues/7
 func TestAlwaysMitmWithRegex(t *testing.T) {
-	_, err := GenRouter([]models.Route{{Url: "https://example\\.test", Regex: true}}, nil, true)
+	router, err := GenRouter([]models.Route{{Url: "https://example\\.test", Regex: true}, {Url: "https://foo.test"}}, nil, true)
 	require.NoError(t, err)
-	// todo add more tests
+
+	hostList := router.GetHttpsHostList()
+	assert.Empty(t, hostList)
 }
