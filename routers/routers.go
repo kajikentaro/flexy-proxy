@@ -16,6 +16,7 @@ type router struct {
 }
 
 var regOrigin = regexp.MustCompile(`^https?://[^/]+`)
+var regHttp = regexp.MustCompile(`^https?://`)
 
 func parse(rawRoutes []models.Route, defaultProxy *url.URL, shouldDecryptHttps bool) ([]parsedRoute, error) {
 	var routes []parsedRoute
@@ -25,6 +26,10 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL, shouldDecryptHttps b
 		inR := inR
 		newR := parsedRoute{
 			Route: &inR,
+		}
+
+		if !regHttp.MatchString(inR.Url) {
+			return nil, NewValidationError(pos, "URL must start with https:// or http://", inR.Url)
 		}
 
 		if inR.Regex {
@@ -50,6 +55,9 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL, shouldDecryptHttps b
 				parsedUrl, err := url.Parse(inR.Url)
 				if err != nil {
 					return nil, err
+				}
+				if parsedUrl.Host == "" {
+					return nil, NewValidationError(pos, "Invalid URL.", inR.Url)
 				}
 				return &origin{scheme: parsedUrl.Scheme, host: parsedUrl.Host}, nil
 			}
@@ -107,29 +115,6 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL, shouldDecryptHttps b
 	return routes, nil
 }
 
-// todo: unused function. to be removed
-func validate(routes []parsedRoute, shouldDecryptHttps bool) error {
-	for i, r := range routes {
-		pos := fmt.Sprint("route.", i)
-		if r.parsedUrl.Scheme != "http" && r.parsedUrl.Scheme != "https" {
-			return NewValidationError(pos, "URL Scheme must be 'http' or 'https'.", r.Url)
-		}
-
-		if r.parsedUrl.Host == "" {
-			return NewValidationError(pos, "Invalid URL.", r.Url)
-		}
-
-		isRegexpEnabled := r.regexUrl != nil
-		if !shouldDecryptHttps &&
-			isRegexpEnabled &&
-			isRegexp(r.parsedUrl.Host) {
-			return NewValidationError(pos, "Regular expressions are not allowed in the hostname when `always_mitm` is false.", r.parsedUrl.Host)
-		}
-	}
-
-	return nil
-}
-
 func GenRouter(routes []models.Route, defaultProxy *url.URL, shouldDecryptHttps bool) (models.Router, error) {
 	parsedRoutes, err := parse(routes, defaultProxy, shouldDecryptHttps)
 	if err != nil {
@@ -153,7 +138,7 @@ type parsedRoute struct {
 	parsedUrl *url.URL
 	regexUrl  *regexp.Regexp
 
-	// if `always_mitm` is true, this will be nil
+	// if `always_mitm` is true (default), this will be nil
 	origin *origin
 }
 
