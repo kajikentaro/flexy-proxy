@@ -82,10 +82,6 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]parsedRoute, erro
 }
 
 func getHostname(inR models.Route, pos string) (*string, error) {
-	if regHttps.MatchString(inR.Url) {
-		return nil, nil
-	}
-
 	if !inR.Regex {
 		parsedUrl, err := url.Parse(inR.Url)
 		if err != nil {
@@ -114,6 +110,10 @@ func getHostname(inR models.Route, pos string) (*string, error) {
 func calcHttpsHostList(routes []models.Route) ([]string, error) {
 	var res []string
 	for i, route := range routes {
+		if !regHttps.MatchString(route.Url) {
+			continue
+		}
+
 		pos := fmt.Sprint("route.", i)
 		hostname, err := getHostname(route, pos)
 		if err != nil {

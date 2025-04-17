@@ -75,10 +75,22 @@ func TestParse(t *testing.T) {
 }
 
 func TestCalcHttpsHostList(t *testing.T) {
-	t.Run("Regexp condition (shouldDecryptHttps:false && isRegexp:true)", func(t *testing.T) {
+	t.Run("isRegexp:true && HTTP", func(t *testing.T) {
 		routes := []models.Route{
 			{
 				Url:   "http://.*example.*",
+				Regex: true,
+			},
+		}
+		actual, err := calcHttpsHostList(routes)
+		require.NoError(t, err)
+		assert.Empty(t, actual)
+	})
+
+	t.Run("isRegexp:true && HTTPS", func(t *testing.T) {
+		routes := []models.Route{
+			{
+				Url:   "https://.*example.*",
 				Regex: true,
 			},
 		}
