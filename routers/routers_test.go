@@ -2,7 +2,6 @@ package routers
 
 import (
 	"net/url"
-	"regexp"
 	"testing"
 
 	"github.com/kajikentaro/flexy-proxy/models"
@@ -17,7 +16,6 @@ func TestIsRegexp(t *testing.T) {
 	}{
 		{"hello world\n", false},
 		{"\n\t   \r\n", false},
-		{`\Qabc\E`, true},
 		{"hello*world", true},
 		{"\\bword\\b", true},
 		{"^start", true},
@@ -25,6 +23,9 @@ func TestIsRegexp(t *testing.T) {
 		{"(group)", true},
 		{"abc[def]", true},
 		{"", true},
+		// NOTE: \Q and \E are used to escape special characters in regex but go does not support it (just ignores them)
+		//       once they are supported, this test should be updated
+		{`\Qabc\E`, false},
 	}
 
 	for _, test := range tests {
@@ -35,44 +36,55 @@ func TestIsRegexp(t *testing.T) {
 	}
 }
 
-func TestValidate(t *testing.T) {
+func TestParse(t *testing.T) {
 	t.Run("Success case", func(t *testing.T) {
-		routes := []parsedRoute{
-			{parsedUrl: mustParseURL(t, "http://example.com")},
-			{parsedUrl: mustParseURL(t, "https://secure.com")},
+		routes := []models.Route{
+			{Url: "http://example.com"},
+			{Url: "https://secure.com"},
 		}
-		err := validate(routes, true)
-		assert.NoError(t, err)
+		actual, err := parse(routes, nil)
+		require.NoError(t, err)
+
+		assert.Nil(t, actual[0].regexUrl)
+		assert.NotNil(t, actual[0].parsedUrl)
+
+		assert.Nil(t, actual[1].regexUrl)
+		assert.NotNil(t, actual[1].parsedUrl)
 	})
 
-	t.Run("Invalid scheme (not http or https)", func(t *testing.T) {
-		routes := []parsedRoute{
-			{parsedUrl: mustParseURL(t, "ftp://example.com"), Route: &models.Route{Url: "ftp://example.com"}},
+	t.Run("Invalid scheme or empty scheme (not http or https)", func(t *testing.T) {
+		routes := []models.Route{
+			{Url: "ftp://example.com"},
+			{Url: "example.com"},
 		}
-		err := validate(routes, true)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "URL Scheme must be 'http' or 'https'.")
+		actual, err := parse(routes, nil)
+		assert.ErrorContains(t, err, "URL must start with https:// or http://")
+		assert.Nil(t, actual)
 	})
 
 	t.Run("Invalid URL (empty hostname)", func(t *testing.T) {
-		routes := []parsedRoute{
-			{parsedUrl: mustParseURL(t, "http:///"), Route: &models.Route{Url: "http:///"}},
+		routes := []models.Route{
+			{Url: "http://"},
+			{Url: "https://"},
 		}
-		err := validate(routes, true)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Invalid URL.")
+		actual, err := parse(routes, nil)
+		assert.ErrorContains(t, err, "URL must have a host")
+		assert.Nil(t, actual)
 	})
 
-	t.Run("Regexp condition (shouldDecryptHttps=false && regexUrl!=nil && isRegexp=true)", func(t *testing.T) {
-		routes := []parsedRoute{
+}
+
+func TestCalcHttpsHostList(t *testing.T) {
+	t.Run("Regexp condition (shouldDecryptHttps:false && isRegexp:true)", func(t *testing.T) {
+		routes := []models.Route{
 			{
-				parsedUrl: mustParseURL(t, "http://regexp.example.com"),
-				regexUrl:  regexp.MustCompile(".*example.*"),
+				Url:   "http://.*example.*",
+				Regex: true,
 			},
 		}
-		err := validate(routes, false)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "Regular expressions are not allowed in the hostname when `always_mitm` is disabled.")
+		actual, err := calcHttpsHostList(routes)
+		assert.ErrorContains(t, err, "Regular expressions are not allowed in the hostname when `always_mitm` is false.")
+		assert.Nil(t, actual)
 	})
 }
 
@@ -123,4 +135,13 @@ func TestGetMatchedRoute(t *testing.T) {
 			assert.Equal(t, test.expected, matchedRoute)
 		})
 	}
+}
+
+// https://github.com/kajikentaro/flexy-proxy/issues/7
+func TestAlwaysMitmWithRegex(t *testing.T) {
+	router, err := GenRouter([]models.Route{{Url: "https://example\\.test", Regex: true}, {Url: "https://foo.test"}}, nil, true)
+	require.NoError(t, err)
+
+	hostList := router.GetHttpsHostList()
+	assert.Empty(t, hostList)
 }
