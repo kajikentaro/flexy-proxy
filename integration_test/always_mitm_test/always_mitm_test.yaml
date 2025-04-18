@@ -1,0 +1,13 @@
+default_route:
+  deny_access: true
+
+always_mitm: false
+
+routes:
+  - url: "https://with-regex\\.test/.*"
+    regex: true
+    response:
+      content: "with regex"
+  - url: "https://not-regex.test/"
+    response:
+      content: "not regex"
