@@ -1,17 +1,15 @@
-package rewrite_test
+package rewrite
 
 import (
 	"net/url"
 	"testing"
-
-	"github.com/kajikentaro/flexy-proxy/models/rewrite"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
 
 type DummyStruct struct {
-	Rewrite rewrite.Rewrite
+	Rewrite *Rewrite `yaml:"rewrite"`
 }
 
 func TestSingleString(t *testing.T) {
@@ -68,4 +66,53 @@ rewrite:
 	expected, _ := url.ParseRequestURI("http://original-2.net")
 
 	assert.Equal(t, expected, actual)
+}
+
+func TestMarshalYaml(t *testing.T) {
+	t.Run("single string", func(t *testing.T) {
+		in := DummyStruct{
+			Rewrite: &Rewrite{singleUrl: "original"},
+		}
+		marshaled, err := yaml.Marshal(in)
+		assert.NoError(t, err)
+		expected := "rewrite: original\n"
+		assert.Equal(t, expected, string(marshaled))
+	})
+	t.Run("advanced options", func(t *testing.T) {
+		in := DummyStruct{
+			Rewrite: &Rewrite{
+				advancedOptions: advancedOptions{
+					From:  "original",
+					To:    "replaced",
+					Regex: true,
+				},
+			},
+		}
+		marshaled, err := yaml.Marshal(in)
+		assert.NoError(t, err)
+		expected :=
+			`rewrite:
+    from: original
+    to: replaced
+    regex: true
+    proxy: null
+`
+		assert.Equal(t, expected, string(marshaled))
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		in := DummyStruct{
+			Rewrite: &Rewrite{},
+		}
+		marshaled, err := yaml.Marshal(in)
+		assert.NoError(t, err)
+		expected :=
+			`rewrite:
+    from: ""
+    to: ""
+    regex: false
+    proxy: null
+`
+		assert.Equal(t, expected, string(marshaled))
+	})
 }
