@@ -81,30 +81,30 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]parsedRoute, erro
 	return routes, nil
 }
 
-func getHostname(inR models.Route, pos string) (*string, error) {
+func getHostname(inR models.Route, pos string) (string, error) {
 	if !inR.Regex {
 		parsedUrl, err := url.Parse(inR.Url)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		return &parsedUrl.Host, nil
+		return parsedUrl.Host, nil
 	}
 
 	// `originStr` would be 'https://foo\.example\.com'
 	originStr := regOrigin.FindString(inR.Url)
 	if isRegexp(originStr) {
-		return nil, NewValidationError(pos, "Regular expressions are not allowed in the hostname when `always_mitm` is false.", originStr)
+		return "", NewValidationError(pos, "Regular expressions are not allowed in the hostname when `always_mitm` is false.", originStr)
 	}
 	// `originPlained` would be 'https://foo.example.com'
 	originPlained, err := decodeRegexpEscape(originStr)
 	if err != nil {
-		return nil, NewValidationError(pos, fmt.Sprintf("Failed to decode regex: %s", err), originPlained)
+		return "", NewValidationError(pos, fmt.Sprintf("Failed to decode regex: %s", err), originPlained)
 	}
 	url, err := url.Parse(originPlained)
 	if err != nil {
-		return nil, NewValidationError(pos, fmt.Sprintf("Failed to parse decoded regex: %s", err), originPlained)
+		return "", NewValidationError(pos, fmt.Sprintf("Failed to parse decoded regex: %s", err), originPlained)
 	}
-	return &url.Host, nil
+	return url.Host, nil
 }
 
 func calcHttpsHostList(routes []models.Route) ([]string, error) {
@@ -119,7 +119,8 @@ func calcHttpsHostList(routes []models.Route) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, *hostname)
+		hostname = fmt.Sprintf("%s:443", hostname)
+		res = append(res, hostname)
 	}
 
 	return res, nil

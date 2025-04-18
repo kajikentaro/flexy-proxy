@@ -111,3 +111,10 @@ func (e *Rewrite) UnmarshalYAML(value *yaml.Node) error {
 
 	return err
 }
+
+func (e *Rewrite) MarshalYAML() (interface{}, error) {
+	if e.singleUrl != "" {
+		return e.singleUrl, nil
+	}
+	return e.advancedOptions, nil
+}
