@@ -60,11 +60,12 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 }
 
 type Proxy struct {
-	defaultRoute DefaultRoute
-	alwaysMitm   bool
-	certificate  *tls.Certificate
-	logger       *loggers.Logger
-	router       models.Router
+	defaultRoute    DefaultRoute
+	alwaysMitm      bool
+	certificate     *tls.Certificate
+	logger          *loggers.Logger
+	router          models.Router
+	hostToCertCache map[string]*tls.Config
 }
 
 type Config struct {
@@ -82,28 +83,41 @@ type DefaultRoute struct {
 
 func SetupProxy(config *Config) *goproxy.ProxyHttpServer {
 	p := &Proxy{
-		defaultRoute: config.DefaultRoute,
-		alwaysMitm:   config.AlwaysMitm,
-		certificate:  config.Certificate,
-		logger:       config.Logger,
-		router:       config.Router,
+		defaultRoute:    config.DefaultRoute,
+		alwaysMitm:      config.AlwaysMitm,
+		certificate:     config.Certificate,
+		logger:          config.Logger,
+		router:          config.Router,
+		hostToCertCache: make(map[string]*tls.Config),
 	}
 	config.Logger.Info("Proxy has been configured", "route pattern length", len(config.Router.GetUrlList()))
 	return p.getProxyHttpServer()
 }
 
-func (p *Proxy) eavesDropHttp() goproxy.FuncHttpsHandler {
-	if p.certificate == nil {
-		return goproxy.AlwaysMitm
+// TODO: if we can use *goproxy.ProxyCtx.certStore, we can simplify this code
+func (p *Proxy) getTlsConfig(host string, ctx *goproxy.ProxyCtx) (*tls.Config, error) {
+	caCert := p.certificate
+	if caCert == nil {
+		caCert = &goproxy.GoproxyCa
 	}
 
-	ca := &goproxy.ConnectAction{
+	if cert, ok := p.hostToCertCache[host]; ok {
+		return cert, nil
+	} else {
+		cert, err := goproxy.TLSConfigFromCA(caCert)(host, ctx)
+		if err != nil {
+			return nil, err
+		}
+		p.hostToCertCache[host] = cert
+		return cert, nil
+	}
+}
+
+func (p *Proxy) eavesDropHttp(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
+	return &goproxy.ConnectAction{
 		Action:    goproxy.ConnectMitm,
-		TLSConfig: goproxy.TLSConfigFromCA(p.certificate),
-	}
-	return func(host string, ctx *goproxy.ProxyCtx) (*goproxy.ConnectAction, string) {
-		return ca, host
-	}
+		TLSConfig: p.getTlsConfig,
+	}, host
 }
 
 func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
@@ -112,10 +126,10 @@ func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
 	proxy.Verbose = true
 
 	if p.alwaysMitm {
-		proxy.OnRequest().HandleConnect(p.eavesDropHttp())
+		proxy.OnRequest().HandleConnectFunc(p.eavesDropHttp)
 	} else {
 		hosts := p.router.GetHttpsHostList()
-		proxy.OnRequest(goproxy.ReqHostIs(hosts...)).HandleConnect(p.eavesDropHttp())
+		proxy.OnRequest(goproxy.ReqHostIs(hosts...)).HandleConnectFunc(p.eavesDropHttp)
 	}
 
 	proxy.OnRequest().DoFunc(p.onRequest)
