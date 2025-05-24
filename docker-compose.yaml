@@ -1,6 +1,6 @@
 services:
   dev:
-    image: golang:1.21.4-bullseye
+    image: golang:1.24.3-bullseye
     volumes:
       - ./:/app
     working_dir: /app
