@@ -74,7 +74,7 @@ func StartProxyServer(ctx context.Context, proxyAddr string, configPath string) 
 		return err
 	}
 
-	proxy := proxy.SetupProxy(proxyConfig)
+	proxy := proxy.NewProxy(proxyConfig)
 
 	srv := &http.Server{Addr: proxyAddr, Handler: proxy}
 
