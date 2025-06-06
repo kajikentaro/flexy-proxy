@@ -18,7 +18,7 @@ var defaultLogger = loggers.GenLogger(nil)
 
 func StartProxy(customConfigPath string, portNum int) error {
 	restart := make(chan struct{})
-	defer close(restart)
+	serverErr := make(chan error)
 
 	eg, ctx := errgroup.WithContext(context.Background())
 
@@ -26,78 +26,76 @@ func StartProxy(customConfigPath string, portNum int) error {
 		return utils.WatchFile(ctx, defaultLogger, customConfigPath, restart)
 	})
 	eg.Go(func() error {
-		restart <- struct{}{} // initial start
-		return nil
-	})
-	eg.Go(func() error {
-		var server *server
-
+		server := NewServer(customConfigPath, portNum)
 		for {
 			select {
 			case <-restart:
-				if server != nil {
-					if err := server.Close(); err != nil {
-						return fmt.Errorf("failed to stop server: %w", err)
-					}
-				}
-
-				var err error
-				server, err = newServer(customConfigPath, portNum)
-				if errors.Is(err, errConfig) {
+				go func() {
+					serverErr <- server.ResetAndServe()
+				}()
+			case err := <-serverErr:
+				if errors.Is(err, ErrConfig) {
+					defaultLogger.Error("Failed to parse config. Waiting for changes...", "error", err)
 					continue
 				}
 				if err != nil {
 					return err
 				}
-
-				eg.Go(func() error {
-					return server.Start()
-				})
+				defaultLogger.Info("Server stopped successfully")
+				continue
 			case <-ctx.Done():
 				return nil
 			}
 		}
 	})
+	restart <- struct{}{} // initial start
 	return eg.Wait()
 }
 
-type server struct {
-	*http.Server
+type Server struct {
+	configPath string
+	portNum    int
+	srv        *http.Server
 }
 
-var errConfig = errors.New("config error")
+var ErrConfig = errors.New("config error")
 
-func newServer(customConfigPath string, portNum int) (*server, error) {
-	proxyConfig, err := utils.ParseConfig(customConfigPath)
-	if err != nil {
-		defaultLogger.Error("Failed to parse config. Waiting for changes...", "error", err)
-		return nil, errConfig
+func NewServer(customConfigPath string, portNum int) *Server {
+	return &Server{
+		configPath: customConfigPath,
+		portNum:    portNum,
+		srv:        nil,
 	}
-
-	proxy := proxy.NewProxy(proxyConfig)
-	addr := fmt.Sprintf(":%d", portNum)
-	srv := &server{&http.Server{Addr: addr, Handler: proxy}}
-	proxyConfig.Logger.Info(fmt.Sprintf("Starting proxy on %s", addr))
-	return srv, nil
 }
 
-func (s *server) Close() error {
+func (s *Server) close() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := s.Server.Shutdown(ctx); err != nil {
-		return err
-	}
-	return s.Server.Close()
+	return s.srv.Shutdown(ctx)
 }
 
-func (s *server) Start() error {
-	err := s.Server.ListenAndServe()
+// start server. if the server is already running, it will be closed and restarted
+func (s *Server) ResetAndServe() error {
+	if s.srv != nil {
+		if err := s.close(); err != nil {
+			return fmt.Errorf("failed to close server: %w", err)
+		}
+	}
+
+	proxyConfig, err := utils.ParseConfig(s.configPath)
+	if err != nil {
+		return ErrConfig
+	}
+
+	proxy := proxy.NewProxy(proxyConfig)
+	addr := fmt.Sprintf(":%d", s.portNum)
+	s.srv = &http.Server{Addr: addr, Handler: proxy}
+	proxyConfig.Logger.Info(fmt.Sprintf("Starting proxy on %s", addr))
+
+	err = s.srv.ListenAndServe()
 	if errors.Is(err, http.ErrServerClosed) {
 		return nil
 	}
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

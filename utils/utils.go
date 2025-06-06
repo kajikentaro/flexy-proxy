@@ -63,7 +63,7 @@ func ReadConfigYaml(configPath string) (*models.RawConfig, error) {
 		var data map[string]interface{}
 		err := yaml.Unmarshal(fileContent, &data)
 		if err != nil {
-			return nil, err
+			return nil, err // todo unmarshal error
 		}
 
 		// validation
@@ -74,14 +74,14 @@ func ReadConfigYaml(configPath string) (*models.RawConfig, error) {
 			return nil, err
 		}
 		if !result.Valid() {
-			return nil, convertToError(result.Errors())
+			return nil, convertToError(result.Errors()) // todo parse error
 		}
 	}
 
 	config := DEFAULT_CONFIG
 	err = yaml.Unmarshal(fileContent, &config)
 	if err != nil {
-		return nil, err
+		return nil, err // unmarshal error
 	}
 	return &config, nil
 }
@@ -100,7 +100,7 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 		var err error
 		defaultProxy, err = url.Parse(rawConfig.DefaultRoute.Proxy)
 		if err != nil {
-			return nil, err
+			return nil, err // todo parse error
 		}
 	}
 

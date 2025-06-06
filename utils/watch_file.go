@@ -33,11 +33,11 @@ func WatchFile(ctx context.Context, log *loggers.Logger, targetFilePath string, 
 			}
 			if filepath.Base(event.Name) == filepath.Base(targetFilePath) {
 				debounce(func() {
-					log.Info("File changed, restarting server...")
+					log.Warn("File changed, restarting server...")
 					select {
 					case restart <- struct{}{}:
 					default:
-						log.Info("Restart already pending. Skipping signal.")
+						log.Warn("Restart already pending. Skipping signal.")
 					}
 				})
 			}
