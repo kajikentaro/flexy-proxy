@@ -81,7 +81,7 @@ type DefaultRoute struct {
 	DenyAccess bool `yaml:"deny_access"`
 }
 
-func SetupProxy(config *Config) *goproxy.ProxyHttpServer {
+func NewProxy(config *Config) http.Handler {
 	p := &Proxy{
 		defaultRoute:    config.DefaultRoute,
 		alwaysMitm:      config.AlwaysMitm,

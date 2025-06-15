@@ -1,17 +1,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 
-	"github.com/kajikentaro/flexy-proxy/models"
-	"github.com/kajikentaro/flexy-proxy/proxy"
+	"github.com/kajikentaro/flexy-proxy/cmd"
 	"github.com/kajikentaro/flexy-proxy/utils"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 // this will be specified like:
@@ -25,44 +20,11 @@ func getVersion() string {
 	return version
 }
 
-func startProxy(customConfigPath string, portNum int) {
-	proxyConfig, err := utils.ParseConfig(customConfigPath)
-	if err != nil {
+func run(runner func() error) {
+	if err := runner(); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
-
-	proxy := proxy.SetupProxy(proxyConfig)
-	addr := fmt.Sprintf(":%d", portNum)
-	proxyConfig.Logger.Info(fmt.Sprintf("Proxy started on %s", addr))
-	fmt.Fprintf(os.Stderr, "%v\n", http.ListenAndServe(addr, proxy))
-}
-
-func testRoute(customConfigPath string, testUrl string) error {
-	proxyConfig, err := utils.ParseConfig(customConfigPath)
-	if err != nil {
-		return err
-	}
-
-	parsedUrl, err := url.Parse(testUrl)
-	if err != nil {
-		return err
-	}
-
-	route, err := proxyConfig.Router.GetMatchedRoute(parsedUrl)
-	if errors.Is(err, models.ErrRouteNotFound) {
-		return fmt.Errorf("route not found")
-	} else if err != nil {
-		return err
-	}
-
-	yaml, err := yaml.Marshal(route)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("Matched Route YAML:\n\n%s\n", string(yaml))
-
-	return nil
 }
 
 func main() {
@@ -74,8 +36,10 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "main",
 		Short: "A YAML-based flexible proxy for software development",
-		Run: func(cmd *cobra.Command, args []string) {
-			startProxy(customConfigPath, portNum)
+		Run: func(c *cobra.Command, args []string) {
+			run(func() error {
+				return cmd.StartProxy(customConfigPath, portNum)
+			})
 		},
 	}
 
@@ -93,8 +57,10 @@ func main() {
 	startCmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start the proxy server",
-		Run: func(cmd *cobra.Command, args []string) {
-			startProxy(customConfigPath, portNum)
+		Run: func(c *cobra.Command, args []string) {
+			run(func() error {
+				return cmd.StartProxy(customConfigPath, portNum)
+			})
 		},
 	}
 
@@ -102,11 +68,10 @@ func main() {
 		Use:   "test [URL]",
 		Short: "Print the configured routing information for the given URL",
 		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := testRoute(customConfigPath, args[0]); err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
-				os.Exit(1)
-			}
+		Run: func(c *cobra.Command, args []string) {
+			run(func() error {
+				return cmd.TestRoute(customConfigPath, args[0])
+			})
 		},
 	}
 
