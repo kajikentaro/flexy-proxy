@@ -35,7 +35,7 @@ func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]parsedRoute, erro
 		}
 
 		if inR.Regex {
-			regexUrl, err := regexp.Compile(inR.Url)
+			regexUrl, err := regexp.Compile("^" + inR.Url)
 			if err != nil {
 				return nil, NewValidationError(pos, "Failed to compile regex: %s", inR.Url)
 			}
@@ -224,7 +224,7 @@ func (r *router) TryRoundTrip(req *http.Request) (map[string]string, *http.Respo
 	info["matched_url"] = reqUrl.String()
 	info["type"] = main.GetType()
 
-	res.Header.Add("flexy-proxy", fmt.Sprintf("matched route: %s", route.Url))
+	res.Header.Add("Flexy-Proxy-Matched-URL", route.Url)
 	res.Request = req
 
 	return info, res, nil

@@ -157,3 +157,19 @@ func TestAlwaysMitmWithRegex(t *testing.T) {
 	hostList := router.GetHttpsHostList()
 	assert.Empty(t, hostList)
 }
+
+func TestRegexRouteDoesNotMatchQueryParam(t *testing.T) {
+	routes := []models.Route{
+		{
+			Url:   "https://foo.dev",
+			Regex: true,
+		},
+	}
+	router, err := GenRouter(routes, nil, true)
+	require.NoError(t, err)
+
+	input := "https://example.com?callback=https://foo.dev"
+	parsedInput := mustParseURL(t, input)
+	_, err = router.GetMatchedRoute(parsedInput)
+	assert.Error(t, err, "Should not match route with Regex against query param")
+}
