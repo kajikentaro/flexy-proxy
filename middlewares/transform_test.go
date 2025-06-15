@@ -50,6 +50,14 @@ func TestTransformMiddleware(t *testing.T) {
 			command:        []string{"bash", "-c", "echo $REQ_BODY"},
 			expectedOutput: "test request body\n",
 		},
+		{
+			name:           "$REQ_HEADER and $RES_HEADER are set",
+			requestBody:    "",
+			responseBody:   "",
+			contentType:    "text/plain; test=req-header",
+			command:        []string{"bash", "-c", "echo $REQ_HEADER; echo $RES_HEADER"},
+			expectedOutput: "{\"Content-Type\":[\"text/plain; test=req-header\"]}\n{\"Content-Type\":[\"text/plain\"]}\n",
+		},
 	}
 
 	for _, tt := range tests {
