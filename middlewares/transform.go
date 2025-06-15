@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -54,8 +55,23 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 			r.Body = io.NopCloser(bytes.NewReader(reqBody))
 		}
 
+		reqHeader, err := json.Marshal(r.Header)
+		if err != nil {
+			return nil, err
+		}
+
+		resHeader, err := json.Marshal(res.Header)
+		if err != nil {
+			return nil, err
+		}
+
 		cmd := exec.Command((*t.command)[0], (*t.command)[1:]...)
-		cmd.Env = append(os.Environ(), "REQ_BODY="+string(reqBody))
+		env := append(os.Environ(),
+			"REQ_BODY="+string(reqBody),
+			"REQ_HEADER="+string(reqHeader),
+			"RES_HEADER="+string(resHeader),
+		)
+		cmd.Env = env
 		cmd.Stdin = res.Body
 		pr, pw := io.Pipe()
 		cmd.Stdout = pw
