@@ -10,6 +10,7 @@ import (
 
 	"github.com/kajikentaro/flexy-proxy/loggers"
 	"github.com/kajikentaro/flexy-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/utils/cache"
 
 	"github.com/elazarl/goproxy"
 )
@@ -65,7 +66,7 @@ type Proxy struct {
 	certificate     *tls.Certificate
 	logger          *loggers.Logger
 	router          models.Router
-	hostToCertCache map[string]*tls.Config
+	hostToCertCache *cache.LRUCache[string, *tls.Config]
 }
 
 type Config struct {
@@ -81,6 +82,9 @@ type DefaultRoute struct {
 	DenyAccess bool `yaml:"deny_access"`
 }
 
+// Around 100 MB (1 certificate is 8KB)
+var MAX_TLS_CERT_CACHE_SIZE = 10000000
+
 func SetupProxy(config *Config) *goproxy.ProxyHttpServer {
 	p := &Proxy{
 		defaultRoute:    config.DefaultRoute,
@@ -88,7 +92,7 @@ func SetupProxy(config *Config) *goproxy.ProxyHttpServer {
 		certificate:     config.Certificate,
 		logger:          config.Logger,
 		router:          config.Router,
-		hostToCertCache: make(map[string]*tls.Config),
+		hostToCertCache: cache.NewLRUCache[string, *tls.Config](MAX_TLS_CERT_CACHE_SIZE),
 	}
 	config.Logger.Info("Proxy has been configured", "route pattern length", len(config.Router.GetUrlList()))
 	return p.getProxyHttpServer()
@@ -101,14 +105,14 @@ func (p *Proxy) getTlsConfig(host string, ctx *goproxy.ProxyCtx) (*tls.Config, e
 		caCert = &goproxy.GoproxyCa
 	}
 
-	if cert, ok := p.hostToCertCache[host]; ok {
+	if cert, ok := p.hostToCertCache.Load(host); ok {
 		return cert, nil
 	} else {
 		cert, err := goproxy.TLSConfigFromCA(caCert)(host, ctx)
 		if err != nil {
 			return nil, err
 		}
-		p.hostToCertCache[host] = cert
+		p.hostToCertCache.Store(host, cert)
 		return cert, nil
 	}
 }

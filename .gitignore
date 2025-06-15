@@ -5,3 +5,4 @@ config.yaml
 server.key
 server.csr
 server.crt
+flexy-proxy
