@@ -116,7 +116,7 @@ func parse(config *models.RawConfig) ([]ActiveRoute, error) {
 		}
 
 		if route.Response.Rewrite != nil {
-			h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite)
+			h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite, config.InsecureCipherSuites)
 			return h, nil
 		}
 
@@ -126,7 +126,7 @@ func parse(config *models.RawConfig) ([]ActiveRoute, error) {
 		}
 
 		// by default, return this
-		h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite)
+		h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite, config.InsecureCipherSuites)
 		return h, nil
 	}
 
@@ -189,12 +189,12 @@ func (r *router) TryRoundTrip(req *http.Request) (map[string]string, *http.Respo
 	if err != nil {
 		return nil, nil, err
 	}
-	req.Header.Set(HEADER_ROUTE_INDEX, fmt.Sprint(route.routeConf))
 
 	res, err := route.RoundTrip(req)
 	if err != nil {
 		return nil, nil, err
 	}
+	res.Header.Set(HEADER_ROUTE_INDEX, fmt.Sprint(route.routeIndex))
 
 	log := make(map[string]string)
 	for headerK, logK := range HEADER_KEY_TO_LOG_KEY {

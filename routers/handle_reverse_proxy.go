@@ -1,23 +1,25 @@
 package routers
 
 import (
-	"crypto/tls"
 	"net/http"
 	"net/url"
 
 	"github.com/kajikentaro/flexy-proxy/models/rewrite"
+	"github.com/kajikentaro/flexy-proxy/utils"
 )
 
-func NewReverseProxyTransport(proxyUrl *url.URL, urlRewriter *rewrite.Rewrite) http.RoundTripper {
+func NewReverseProxyTransport(proxyUrl *url.URL, urlRewriter *rewrite.Rewrite, insecureCipherSuites bool) http.RoundTripper {
 	return &ReverseProxyTransport{
-		proxyUrl:    proxyUrl,
-		urlRewriter: urlRewriter,
+		proxyUrl:             proxyUrl,
+		urlRewriter:          urlRewriter,
+		insecureCipherSuites: insecureCipherSuites,
 	}
 }
 
 type ReverseProxyTransport struct {
-	proxyUrl    *url.URL
-	urlRewriter *rewrite.Rewrite
+	proxyUrl             *url.URL
+	urlRewriter          *rewrite.Rewrite
+	insecureCipherSuites bool
 }
 
 func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -35,14 +37,7 @@ func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, erro
 	// we should update host manually; otherwise, the original host remains
 	rr.Host = forwardUrl.Host
 
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	if c.proxyUrl != nil {
-		t.Proxy = func(req *http.Request) (*url.URL, error) {
-			return c.proxyUrl, nil
-		}
-	}
-
+	t := utils.GetTransport(c.insecureCipherSuites, c.proxyUrl)
 	res, err := t.RoundTrip(rr)
 	if err != nil {
 		return nil, err
