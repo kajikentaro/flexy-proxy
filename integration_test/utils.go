@@ -14,7 +14,7 @@ import (
 
 	"github.com/kajikentaro/flexy-proxy/loggers"
 	"github.com/kajikentaro/flexy-proxy/proxy"
-	"github.com/kajikentaro/flexy-proxy/utils"
+	"github.com/kajikentaro/flexy-proxy/utils/configs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -69,7 +69,7 @@ func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Log
 }
 
 func StartProxyServer(ctx context.Context, proxyAddr string, configPath string) error {
-	proxyConfig, err := utils.ParseConfig(configPath)
+	proxyConfig, err := configs.ParseConfig(configPath)
 	if err != nil {
 		return err
 	}
