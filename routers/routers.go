@@ -12,13 +12,8 @@ import (
 )
 
 type router struct {
-	routes        []ActiveRoute
-	httpsHostList []string
+	routes []ActiveRoute
 }
-
-var regOrigin = regexp.MustCompile(`^https?://[^/]+`)
-var regHttpOrHttps = regexp.MustCompile(`^https?://`)
-var regHttps = regexp.MustCompile(`^https://`)
 
 type ActiveRoute struct {
 	http.RoundTripper
@@ -30,7 +25,18 @@ type ActiveRoute struct {
 	regexUrl  *regexp.Regexp
 }
 
-func parse(routeConfList []models.RouteConf, defaultProxy *url.URL) ([]ActiveRoute, error) {
+var regHttpOrHttps = regexp.MustCompile(`^https?://`)
+
+func parse(config *models.RawConfig) ([]ActiveRoute, error) {
+	var defaultProxy *url.URL
+	if config.DefaultRoute.Proxy != "" {
+		var err error
+		defaultProxy, err = url.Parse(config.DefaultRoute.Proxy)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	type validRoute struct {
 		// pre-set values
 		*models.RouteConf
@@ -47,7 +53,7 @@ func parse(routeConfList []models.RouteConf, defaultProxy *url.URL) ([]ActiveRou
 
 	var validRoutes []validRoute
 
-	for i, r := range routeConfList {
+	for i, r := range config.Routes {
 		r := r
 		pos := fmt.Sprint("route.", i)
 		rr := validRoute{
@@ -56,13 +62,13 @@ func parse(routeConfList []models.RouteConf, defaultProxy *url.URL) ([]ActiveRou
 		}
 
 		if !regHttpOrHttps.MatchString(r.Url) {
-			return nil, NewValidationError(pos, "URL must start with https:// or http://", r.Url)
+			return nil, models.NewValidationError(pos, "URL must start with https:// or http://", r.Url)
 		}
 
 		if r.Regex {
 			regexUrl, err := regexp.Compile("^" + r.Url)
 			if err != nil {
-				return nil, NewValidationError(pos, "Failed to compile regex: %s", r.Url)
+				return nil, models.NewValidationError(pos, "Failed to compile regex: %s", r.Url)
 			}
 			rr.regexUrl = regexUrl
 		} else {
@@ -71,7 +77,7 @@ func parse(routeConfList []models.RouteConf, defaultProxy *url.URL) ([]ActiveRou
 				return nil, err
 			}
 			if parsedUrl.Host == "" {
-				return nil, NewValidationError(pos, "URL must have a host", r.Url)
+				return nil, models.NewValidationError(pos, "URL must have a host", r.Url)
 			}
 			rr.parsedUrl = parsedUrl
 		}
@@ -151,66 +157,13 @@ func parse(routeConfList []models.RouteConf, defaultProxy *url.URL) ([]ActiveRou
 	return roundTrippers, nil
 }
 
-func getHostname(inR models.RouteConf, pos string) (string, error) {
-	if !inR.Regex {
-		parsedUrl, err := url.Parse(inR.Url)
-		if err != nil {
-			return "", err
-		}
-		return parsedUrl.Host, nil
-	}
-
-	// `originStr` would be 'https://foo\.example\.com'
-	originStr := regOrigin.FindString(inR.Url)
-	if isRegexp(originStr) {
-		return "", NewValidationError(pos, "Regular expressions are not allowed in the hostname when `always_mitm` is false.", originStr)
-	}
-	// `originPlained` would be 'https://foo.example.com'
-	originPlained, err := decodeRegexpEscape(originStr)
-	if err != nil {
-		return "", NewValidationError(pos, fmt.Sprintf("Failed to decode regex: %s", err), originPlained)
-	}
-	url, err := url.Parse(originPlained)
-	if err != nil {
-		return "", NewValidationError(pos, fmt.Sprintf("Failed to parse decoded regex: %s", err), originPlained)
-	}
-	return url.Host, nil
-}
-
-func calcHttpsHostList(routes []models.RouteConf) ([]string, error) {
-	var res []string
-	for i, route := range routes {
-		if !regHttps.MatchString(route.Url) {
-			continue
-		}
-
-		pos := fmt.Sprint("route.", i)
-		hostname, err := getHostname(route, pos)
-		if err != nil {
-			return nil, err
-		}
-		hostname = fmt.Sprintf("%s:443", hostname)
-		res = append(res, hostname)
-	}
-
-	return res, nil
-}
-
-func NewRouter(routeConfList []models.RouteConf, defaultProxy *url.URL, shouldDecryptHttps bool) (models.Router, error) {
-	routes, err := parse(routeConfList, defaultProxy)
+func NewRouter(config *models.RawConfig) (models.Router, error) {
+	routes, err := parse(config)
 	if err != nil {
 		return nil, err
 	}
 
-	var httpsHostList []string
-	if !shouldDecryptHttps {
-		httpsHostList, err = calcHttpsHostList(routeConfList)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &router{routes: routes, httpsHostList: httpsHostList}, nil
+	return &router{routes: routes}, nil
 }
 
 func (r *router) GetMatchedRoute(url *url.URL) (models.RouteConf, error) {
@@ -280,8 +233,4 @@ func isUrlSame(in *url.URL, route ActiveRoute) bool {
 		return false
 	}
 	return true
-}
-
-func (r *router) GetHttpsHostList() []string {
-	return r.httpsHostList
 }

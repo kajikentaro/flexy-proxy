@@ -12,6 +12,7 @@ import (
 	"github.com/kajikentaro/flexy-proxy/models"
 	"github.com/kajikentaro/flexy-proxy/proxy"
 	"github.com/kajikentaro/flexy-proxy/routers"
+	"github.com/kajikentaro/flexy-proxy/utils/gethttps"
 	"github.com/xeipuuv/gojsonschema"
 
 	"gopkg.in/yaml.v3"
@@ -95,6 +96,12 @@ func convertToError(errs []gojsonschema.ResultError) error {
 }
 
 func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
+	router, err := routers.NewRouter(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// parse default proxy
 	var defaultProxy *url.URL
 	if rawConfig.DefaultRoute.Proxy != "" {
 		var err error
@@ -102,11 +109,6 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	router, err := routers.NewRouter(rawConfig.Routes, defaultProxy, rawConfig.AlwaysMitm)
-	if err != nil {
-		return nil, err
 	}
 
 	// load certificates
@@ -140,12 +142,22 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 		LogLevel: logLevel,
 	})
 
+	var httpsHostNames []string
+	if !rawConfig.AlwaysMitm {
+		var err error
+		httpsHostNames, err = gethttps.GetHttpsHostList(rawConfig.Routes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	proxyConfig := &proxy.Config{
-		DefaultRoute: proxy.DefaultRoute{Proxy: defaultProxy, DenyAccess: rawConfig.DefaultRoute.DenyAccess},
-		AlwaysMitm:   rawConfig.AlwaysMitm,
-		Certificate:  cer,
-		Logger:       logger,
-		Router:       router,
+		DefaultRoute:   proxy.DefaultRoute{Proxy: defaultProxy, DenyAccess: rawConfig.DefaultRoute.DenyAccess},
+		AlwaysMitm:     rawConfig.AlwaysMitm,
+		Certificate:    cer,
+		Logger:         logger,
+		Router:         router,
+		HttpsHostNames: httpsHostNames,
 	}
 
 	logger.Info("Successfully parsed the config file",

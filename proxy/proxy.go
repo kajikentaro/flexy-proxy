@@ -62,7 +62,6 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 
 type Proxy struct {
 	defaultRoute    DefaultRoute
-	alwaysMitm      bool
 	certificate     *tls.Certificate
 	logger          *loggers.Logger
 	router          models.Router
@@ -70,11 +69,12 @@ type Proxy struct {
 }
 
 type Config struct {
-	DefaultRoute DefaultRoute
-	AlwaysMitm   bool
-	Certificate  *tls.Certificate
-	Logger       *loggers.Logger
-	Router       models.Router
+	DefaultRoute   DefaultRoute
+	AlwaysMitm     bool
+	Certificate    *tls.Certificate
+	Logger         *loggers.Logger
+	Router         models.Router
+	HttpsHostNames []string
 }
 
 type DefaultRoute struct {
@@ -88,14 +88,13 @@ var MAX_TLS_CERT_CACHE_SIZE = 10000000
 func SetupProxy(config *Config) *goproxy.ProxyHttpServer {
 	p := &Proxy{
 		defaultRoute:    config.DefaultRoute,
-		alwaysMitm:      config.AlwaysMitm,
 		certificate:     config.Certificate,
 		logger:          config.Logger,
 		router:          config.Router,
 		hostToCertCache: cache.NewLRUCache[string, *tls.Config](MAX_TLS_CERT_CACHE_SIZE),
 	}
 	config.Logger.Info("Proxy has been configured")
-	return p.getProxyHttpServer()
+	return p.getProxyHttpServer(config)
 }
 
 // TODO: if we can use *goproxy.ProxyCtx.certStore, we can simplify this code
@@ -124,16 +123,15 @@ func (p *Proxy) eavesDropHttp(host string, ctx *goproxy.ProxyCtx) (*goproxy.Conn
 	}, host
 }
 
-func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
+func (p *Proxy) getProxyHttpServer(config *Config) *goproxy.ProxyHttpServer {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Logger = GenLoggerForProxy(p.logger)
 	proxy.Verbose = true
 
-	if p.alwaysMitm {
+	if config.AlwaysMitm {
 		proxy.OnRequest().HandleConnectFunc(p.eavesDropHttp)
 	} else {
-		hosts := p.router.GetHttpsHostList()
-		proxy.OnRequest(goproxy.ReqHostIs(hosts...)).HandleConnectFunc(p.eavesDropHttp)
+		proxy.OnRequest(goproxy.ReqHostIs(config.HttpsHostNames...)).HandleConnectFunc(p.eavesDropHttp)
 	}
 
 	proxy.OnRequest().DoFunc(p.onRequest)

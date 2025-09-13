@@ -26,7 +26,6 @@ type RawDefaultRoute struct {
 }
 
 type Router interface {
-	GetHttpsHostList() []string
 	TryRoundTrip(*http.Request) (successInfo map[string]string, res *http.Response, err error)
 	GetMatchedRoute(*url.URL) (route RouteConf, err error)
 }
