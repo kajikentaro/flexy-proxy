@@ -14,7 +14,7 @@ import (
 	test_utils "github.com/kajikentaro/flexy-proxy/integration_test"
 	"github.com/kajikentaro/flexy-proxy/loggers"
 	"github.com/kajikentaro/flexy-proxy/models"
-	"github.com/kajikentaro/flexy-proxy/utils"
+	"github.com/kajikentaro/flexy-proxy/utils/configs"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -44,7 +44,7 @@ func TestRequestOnConfigUrl(t *testing.T) {
 		defer cancel()
 	}
 
-	config, err := utils.ReadConfigYaml("route_test.yaml")
+	config, err := configs.ReadConfigYaml("route_test.yaml")
 	assert.NoError(t, err)
 
 	for idx, c := range config.Routes {

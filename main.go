@@ -9,7 +9,7 @@ import (
 
 	"github.com/kajikentaro/flexy-proxy/models"
 	"github.com/kajikentaro/flexy-proxy/proxy"
-	"github.com/kajikentaro/flexy-proxy/utils"
+	"github.com/kajikentaro/flexy-proxy/utils/configs"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -26,7 +26,7 @@ func getVersion() string {
 }
 
 func startProxy(customConfigPath string, portNum int) {
-	proxyConfig, err := utils.ParseConfig(customConfigPath)
+	proxyConfig, err := configs.ParseConfig(customConfigPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
@@ -39,7 +39,7 @@ func startProxy(customConfigPath string, portNum int) {
 }
 
 func testRoute(customConfigPath string, testUrl string) error {
-	proxyConfig, err := utils.ParseConfig(customConfigPath)
+	proxyConfig, err := configs.ParseConfig(customConfigPath)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func main() {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringVarP(&customConfigPath, "config", "f", utils.DEFAULT_CONFIG_PATH, "Path to custom config file")
+	rootCmd.PersistentFlags().StringVarP(&customConfigPath, "config", "f", configs.DEFAULT_CONFIG_PATH, "Path to custom config file")
 	rootCmd.PersistentFlags().IntVarP(&portNum, "port", "p", 8888, "Port number")
 
 	versionCmd := &cobra.Command{
