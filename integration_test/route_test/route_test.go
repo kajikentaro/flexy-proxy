@@ -75,7 +75,7 @@ func TestRequestOnConfigUrl(t *testing.T) {
 	}
 }
 
-func assertCommon(t *testing.T, conf models.Route, res *http.Response) {
+func assertCommon(t *testing.T, conf models.RouteConf, res *http.Response) {
 	// check content type
 	if conf.Response.ContentType != "" {
 		expectedContentType := conf.Response.ContentType
@@ -95,7 +95,7 @@ func assertCommon(t *testing.T, conf models.Route, res *http.Response) {
 	}
 }
 
-func assertFile(t *testing.T, conf models.Route, res *http.Response, body []byte) {
+func assertFile(t *testing.T, conf models.RouteConf, res *http.Response, body []byte) {
 	// check content type set by the handler
 	if conf.Response.ContentType == "" {
 		expectedContentType := mime.TypeByExtension(filepath.Ext(*conf.Response.File))
@@ -112,7 +112,7 @@ func assertFile(t *testing.T, conf models.Route, res *http.Response, body []byte
 	assert.Equal(t, b, body)
 }
 
-func assertContent(t *testing.T, conf models.Route, res *http.Response, body []byte) {
+func assertContent(t *testing.T, conf models.RouteConf, res *http.Response, body []byte) {
 	// check content type set by the handler
 	if conf.Response.ContentType == "" {
 		assert.Equal(t, "text/plain", res.Header.Get("Content-Type"))
@@ -126,7 +126,7 @@ func assertContent(t *testing.T, conf models.Route, res *http.Response, body []b
 	assert.Equal(t, *conf.Response.Content, string(body))
 }
 
-func assertRewrite(t *testing.T, conf models.Route, res *http.Response, body []byte) {
+func assertRewrite(t *testing.T, conf models.RouteConf, res *http.Response, body []byte) {
 	// check content type set by the handler
 	if conf.Response.ContentType == "" {
 		assert.Equal(t, "text/csv", res.Header.Get("Content-Type"))

@@ -5,11 +5,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/kajikentaro/flexy-proxy/models"
 )
 
-func NewFileResponder(filePath string) models.RoundTripper {
+func NewFileResponder(filePath string) http.RoundTripper {
 	return &FileResponder{
 		filePath: filePath,
 	}
@@ -31,15 +29,7 @@ func (c *FileResponder) RoundTrip(r *http.Request) (*http.Response, error) {
 	}
 	ctype := mime.TypeByExtension(filepath.Ext(c.filePath))
 	res.Header.Set("Content-Type", ctype)
+	res.Header.Set(HEADER_RESPONSE_TYPE, "file")
+	res.Header.Set(HEADER_FILE_PATH, c.filePath)
 	return res, nil
-}
-
-func (c *FileResponder) GetType() string {
-	return "file"
-}
-
-func (c *FileResponder) GetResponseInfo() map[string]string {
-	return map[string]string{
-		"file_path": c.filePath,
-	}
 }

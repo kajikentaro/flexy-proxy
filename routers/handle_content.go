@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-
-	"github.com/kajikentaro/flexy-proxy/models"
 )
 
-func NewContentResponder(body string) models.RoundTripper {
+func NewContentResponder(body string) http.RoundTripper {
 	return &ContentResponder{
 		body: body,
 	}
@@ -25,15 +23,6 @@ func (c *ContentResponder) RoundTrip(r *http.Request) (*http.Response, error) {
 		Body:       io.NopCloser(bytes.NewReader([]byte(c.body))),
 	}
 	res.Header.Set("Content-Type", "text/plain")
+	res.Header.Set(HEADER_RESPONSE_TYPE, "content")
 	return res, nil
-}
-
-func (c *ContentResponder) GetType() string {
-	return "content"
-}
-
-func (c *ContentResponder) GetResponseInfo() map[string]string {
-	return map[string]string{
-		"content": c.body,
-	}
 }

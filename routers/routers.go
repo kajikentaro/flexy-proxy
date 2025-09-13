@@ -12,7 +12,7 @@ import (
 )
 
 type router struct {
-	routes        []parsedRoute
+	routes        []ActiveRoute
 	httpsHostList []string
 }
 
@@ -20,68 +20,138 @@ var regOrigin = regexp.MustCompile(`^https?://[^/]+`)
 var regHttpOrHttps = regexp.MustCompile(`^https?://`)
 var regHttps = regexp.MustCompile(`^https://`)
 
-func parse(rawRoutes []models.Route, defaultProxy *url.URL) ([]parsedRoute, error) {
-	var routes []parsedRoute
+type ActiveRoute struct {
+	http.RoundTripper
+	// for logging and debugging
+	routeConf  *models.RouteConf
+	routeIndex int
+	// one side is nil
+	parsedUrl *url.URL
+	regexUrl  *regexp.Regexp
+}
 
-	for i, inR := range rawRoutes {
+func parse(routeConfList []models.RouteConf, defaultProxy *url.URL) ([]ActiveRoute, error) {
+	type validRoute struct {
+		// pre-set values
+		*models.RouteConf
+		index int
+
+		// parsed values
+		proxyUrl               *url.URL
+		parsedTransformCommand *[]string
+
+		// one side is nil
+		parsedUrl *url.URL
+		regexUrl  *regexp.Regexp
+	}
+
+	var validRoutes []validRoute
+
+	for i, r := range routeConfList {
+		r := r
 		pos := fmt.Sprint("route.", i)
-		inR := inR
-		newR := parsedRoute{
-			Route: &inR,
+		rr := validRoute{
+			RouteConf: &r,
+			index:     i,
 		}
 
-		if !regHttpOrHttps.MatchString(inR.Url) {
-			return nil, NewValidationError(pos, "URL must start with https:// or http://", inR.Url)
+		if !regHttpOrHttps.MatchString(r.Url) {
+			return nil, NewValidationError(pos, "URL must start with https:// or http://", r.Url)
 		}
 
-		if inR.Regex {
-			regexUrl, err := regexp.Compile("^" + inR.Url)
+		if r.Regex {
+			regexUrl, err := regexp.Compile("^" + r.Url)
 			if err != nil {
-				return nil, NewValidationError(pos, "Failed to compile regex: %s", inR.Url)
+				return nil, NewValidationError(pos, "Failed to compile regex: %s", r.Url)
 			}
-			newR.regexUrl = regexUrl
+			rr.regexUrl = regexUrl
 		} else {
-			parsedUrl, err := url.Parse(inR.Url)
+			parsedUrl, err := url.Parse(r.Url)
 			if err != nil {
 				return nil, err
 			}
 			if parsedUrl.Host == "" {
-				return nil, NewValidationError(pos, "URL must have a host", inR.Url)
+				return nil, NewValidationError(pos, "URL must have a host", r.Url)
 			}
-			newR.parsedUrl = parsedUrl
+			rr.parsedUrl = parsedUrl
 		}
 
-		if inR.Response.Transform != "" {
-			parsedCommand, err := shlex.Split(inR.Response.Transform)
+		if r.Response.Transform != "" {
+			parsedCommand, err := shlex.Split(r.Response.Transform)
 			if err != nil {
 				return nil, err
 			}
-			newR.parsedTransformCommand = &parsedCommand
+			rr.parsedTransformCommand = &parsedCommand
 		}
 
-		if inR.Response.Rewrite == nil {
-			newR.proxyUrl = defaultProxy
+		if r.Response.Rewrite == nil {
+			rr.proxyUrl = defaultProxy
 		} else {
-			if inR.Response.Rewrite.Proxy == nil {
-				newR.proxyUrl = defaultProxy
-			} else if *inR.Response.Rewrite.Proxy == "" {
-				newR.proxyUrl = nil
+			if r.Response.Rewrite.Proxy == nil {
+				rr.proxyUrl = defaultProxy
+			} else if *r.Response.Rewrite.Proxy == "" {
+				rr.proxyUrl = nil
 			} else {
-				parsedProxyUrl, err := url.ParseRequestURI(*inR.Response.Rewrite.Proxy)
+				parsedProxyUrl, err := url.ParseRequestURI(*r.Response.Rewrite.Proxy)
 				if err != nil {
 					return nil, err
 				}
-				newR.proxyUrl = parsedProxyUrl
+				rr.proxyUrl = parsedProxyUrl
 			}
 		}
 
-		routes = append(routes, newR)
+		validRoutes = append(validRoutes, rr)
 	}
 
-	return routes, nil
+	getMainRoundTripper := func(route *validRoute) (http.RoundTripper, error) {
+		if route.Response.Content != nil {
+			h := NewContentResponder(*route.Response.Content)
+			return h, nil
+		}
+
+		if route.Response.Rewrite != nil {
+			h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite)
+			return h, nil
+		}
+
+		if route.Response.File != nil {
+			h := NewFileResponder(*route.Response.File)
+			return h, nil
+		}
+
+		// by default, return this
+		h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite)
+		return h, nil
+	}
+
+	var roundTrippers []ActiveRoute
+	for _, r := range validRoutes {
+		main, err := getMainRoundTripper(&r)
+		if err != nil {
+			return nil, err
+		}
+
+		common := middlewares.NewCommonMiddleware(
+			r.Response.ContentType,
+			r.Response.Status,
+			r.Response.Headers,
+			r.parsedTransformCommand,
+		)
+
+		route := ActiveRoute{
+			RoundTripper: common.Middleware(main),
+			parsedUrl:    r.parsedUrl,
+			regexUrl:     r.regexUrl,
+			routeConf:    r.RouteConf,
+			routeIndex:   r.index,
+		}
+		roundTrippers = append(roundTrippers, route)
+	}
+
+	return roundTrippers, nil
 }
 
-func getHostname(inR models.Route, pos string) (string, error) {
+func getHostname(inR models.RouteConf, pos string) (string, error) {
 	if !inR.Regex {
 		parsedUrl, err := url.Parse(inR.Url)
 		if err != nil {
@@ -107,7 +177,7 @@ func getHostname(inR models.Route, pos string) (string, error) {
 	return url.Host, nil
 }
 
-func calcHttpsHostList(routes []models.Route) ([]string, error) {
+func calcHttpsHostList(routes []models.RouteConf) ([]string, error) {
 	var res []string
 	for i, route := range routes {
 		if !regHttps.MatchString(route.Url) {
@@ -126,67 +196,32 @@ func calcHttpsHostList(routes []models.Route) ([]string, error) {
 	return res, nil
 }
 
-func GenRouter(routes []models.Route, defaultProxy *url.URL, shouldDecryptHttps bool) (models.Router, error) {
-	parsedRoutes, err := parse(routes, defaultProxy)
+func NewRouter(routeConfList []models.RouteConf, defaultProxy *url.URL, shouldDecryptHttps bool) (models.Router, error) {
+	routes, err := parse(routeConfList, defaultProxy)
 	if err != nil {
 		return nil, err
 	}
 
 	var httpsHostList []string
 	if !shouldDecryptHttps {
-		httpsHostList, err = calcHttpsHostList(routes)
+		httpsHostList, err = calcHttpsHostList(routeConfList)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return &router{routes: parsedRoutes, httpsHostList: httpsHostList}, nil
+	return &router{routes: routes, httpsHostList: httpsHostList}, nil
 }
 
-type parsedRoute struct {
-	proxyUrl *url.URL
-	*models.Route
-	parsedTransformCommand *[]string
-
-	// one side is nil
-	parsedUrl *url.URL
-	regexUrl  *regexp.Regexp
-}
-
-func (r *router) getMainRoundTripper(route *parsedRoute, reqUrl *url.URL) (models.RoundTripper, error) {
-	if route.Response.Content != nil {
-		h := NewContentResponder(*route.Response.Content)
-		return h, nil
-	}
-
-	if route.Response.Rewrite != nil {
-		newUrl, err := route.Response.Rewrite.Replace(reqUrl)
-		if err != nil {
-			return nil, err
-		}
-		h := NewReverseProxyTransport(newUrl, route.proxyUrl)
-		return h, nil
-	}
-
-	if route.Response.File != nil {
-		h := NewFileResponder(*route.Response.File)
-		return h, nil
-	}
-
-	// by default, return this
-	h := NewReverseProxyTransport(reqUrl, route.proxyUrl)
-	return h, nil
-}
-
-func (r *router) GetMatchedRoute(url *url.URL) (models.Route, error) {
-	parsedRoute, err := r.getMatchedParsedRoute(url)
+func (r *router) GetMatchedRoute(url *url.URL) (models.RouteConf, error) {
+	parsedRoute, err := r.getMatchedRoute(url)
 	if err != nil {
-		return models.Route{}, err
+		return models.RouteConf{}, err
 	}
-	return *parsedRoute.Route, nil
+	return *parsedRoute.routeConf, nil
 }
 
-func (r *router) getMatchedParsedRoute(url *url.URL) (*parsedRoute, error) {
+func (r *router) getMatchedRoute(url *url.URL) (*ActiveRoute, error) {
 	for _, route := range r.routes {
 		if !isUrlSame(url, route) {
 			continue
@@ -197,41 +232,30 @@ func (r *router) getMatchedParsedRoute(url *url.URL) (*parsedRoute, error) {
 }
 
 func (r *router) TryRoundTrip(req *http.Request) (map[string]string, *http.Response, error) {
-	reqUrl := req.URL
-	route, err := r.getMatchedParsedRoute(reqUrl)
+	route, err := r.getMatchedRoute(req.URL)
+	if err != nil {
+		return nil, nil, err
+	}
+	req.Header.Set(HEADER_ROUTE_INDEX, fmt.Sprint(route.routeConf))
+
+	res, err := route.RoundTrip(req)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	common := middlewares.NewCommonMiddleware(
-		route.Response.ContentType,
-		route.Response.Status,
-		route.Response.Headers,
-		route.parsedTransformCommand,
-	)
-
-	main, err := r.getMainRoundTripper(route, reqUrl)
-	if err != nil {
-		return nil, nil, err
+	log := make(map[string]string)
+	for headerK, logK := range HEADER_KEY_TO_LOG_KEY {
+		if v := res.Header.Get(headerK); v != "" {
+			log[logK] = v
+		}
 	}
 
-	res, err := common.Middleware(main).RoundTrip(req)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	info := main.GetResponseInfo()
-	info["matched_url"] = reqUrl.String()
-	info["type"] = main.GetType()
-
-	res.Header.Add("Flexy-Proxy-Matched-URL", route.Url)
 	res.Request = req
-
-	return info, res, nil
+	return log, res, nil
 }
 
-func isUrlSame(in *url.URL, route parsedRoute) bool {
-	if route.Regex {
+func isUrlSame(in *url.URL, route ActiveRoute) bool {
+	if route.regexUrl != nil {
 		return route.regexUrl.MatchString(in.String())
 	}
 
@@ -260,12 +284,4 @@ func isUrlSame(in *url.URL, route parsedRoute) bool {
 
 func (r *router) GetHttpsHostList() []string {
 	return r.httpsHostList
-}
-
-func (r *router) GetUrlList() []string {
-	var res []string
-	for _, route := range r.routes {
-		res = append(res, route.Url)
-	}
-	return res
 }

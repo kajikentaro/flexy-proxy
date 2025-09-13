@@ -12,7 +12,7 @@ import (
 var ConfigSpec string
 
 type RawConfig struct {
-	Routes         []Route
+	Routes         []RouteConf
 	DefaultRoute   RawDefaultRoute `yaml:"default_route"`
 	LogLevel       string          `yaml:"log_level"`
 	AlwaysMitm     bool            `yaml:"always_mitm"`
@@ -28,11 +28,10 @@ type RawDefaultRoute struct {
 type Router interface {
 	GetHttpsHostList() []string
 	TryRoundTrip(*http.Request) (successInfo map[string]string, res *http.Response, err error)
-	GetMatchedRoute(*url.URL) (route Route, err error)
-	GetUrlList() []string
+	GetMatchedRoute(*url.URL) (route RouteConf, err error)
 }
 
-type Route struct {
+type RouteConf struct {
 	Url      string
 	Regex    bool
 	Response struct {
@@ -45,10 +44,4 @@ type Route struct {
 		Headers     map[string]string
 		Transform   string
 	}
-}
-
-type RoundTripper interface {
-	http.RoundTripper
-	GetResponseInfo() map[string]string
-	GetType() string
 }

@@ -104,7 +104,7 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 		}
 	}
 
-	router, err := routers.GenRouter(rawConfig.Routes, defaultProxy, rawConfig.AlwaysMitm)
+	router, err := routers.NewRouter(rawConfig.Routes, defaultProxy, rawConfig.AlwaysMitm)
 	if err != nil {
 		return nil, err
 	}
@@ -148,5 +148,13 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 		Router:       router,
 	}
 
+	logger.Info("Successfully parsed the config file",
+		"route_length", len(rawConfig.Routes),
+		"always_mitm", rawConfig.AlwaysMitm,
+		"certificate_loaded", cer != nil,
+		"default_route_proxy", rawConfig.DefaultRoute.Proxy,
+		"default_route_deny_access", rawConfig.DefaultRoute.DenyAccess,
+		"log_level", logLevelStr,
+	)
 	return proxyConfig, nil
 }
