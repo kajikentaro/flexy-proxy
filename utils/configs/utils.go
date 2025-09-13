@@ -152,12 +152,13 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 	}
 
 	proxyConfig := &proxy.Config{
-		DefaultRoute:   proxy.DefaultRoute{Proxy: defaultProxy, DenyAccess: rawConfig.DefaultRoute.DenyAccess},
-		AlwaysMitm:     rawConfig.AlwaysMitm,
-		Certificate:    cer,
-		Logger:         logger,
-		Router:         router,
-		HttpsHostNames: httpsHostNames,
+		DefaultRoute:         proxy.DefaultRoute{Proxy: defaultProxy, DenyAccess: rawConfig.DefaultRoute.DenyAccess},
+		AlwaysMitm:           rawConfig.AlwaysMitm,
+		Certificate:          cer,
+		Logger:               logger,
+		Router:               router,
+		HttpsHostNames:       httpsHostNames,
+		InsecureCipherSuites: rawConfig.InsecureCipherSuites,
 	}
 
 	logger.Info("Successfully parsed the config file",

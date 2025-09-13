@@ -12,12 +12,13 @@ import (
 var ConfigSpec string
 
 type RawConfig struct {
-	Routes         []RouteConf
-	DefaultRoute   RawDefaultRoute `yaml:"default_route"`
-	LogLevel       string          `yaml:"log_level"`
-	AlwaysMitm     bool            `yaml:"always_mitm"`
-	Certificate    string          `yaml:"certificate"`
-	CertificateKey string          `yaml:"certificate_key"`
+	Routes               []RouteConf
+	DefaultRoute         RawDefaultRoute `yaml:"default_route"`
+	LogLevel             string          `yaml:"log_level"`
+	AlwaysMitm           bool            `yaml:"always_mitm"`
+	Certificate          string          `yaml:"certificate"`
+	CertificateKey       string          `yaml:"certificate_key"`
+	InsecureCipherSuites bool            `yaml:"insecure_cipher_suites"`
 }
 
 type RawDefaultRoute struct {

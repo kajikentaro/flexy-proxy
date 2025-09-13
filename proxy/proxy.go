@@ -10,6 +10,7 @@ import (
 
 	"github.com/kajikentaro/flexy-proxy/loggers"
 	"github.com/kajikentaro/flexy-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/utils"
 	"github.com/kajikentaro/flexy-proxy/utils/cache"
 
 	"github.com/elazarl/goproxy"
@@ -69,12 +70,13 @@ type Proxy struct {
 }
 
 type Config struct {
-	DefaultRoute   DefaultRoute
-	AlwaysMitm     bool
-	Certificate    *tls.Certificate
-	Logger         *loggers.Logger
-	Router         models.Router
-	HttpsHostNames []string
+	DefaultRoute         DefaultRoute
+	AlwaysMitm           bool
+	Certificate          *tls.Certificate
+	Logger               *loggers.Logger
+	Router               models.Router
+	HttpsHostNames       []string
+	InsecureCipherSuites bool
 }
 
 type DefaultRoute struct {
@@ -140,14 +142,11 @@ func (p *Proxy) getProxyHttpServer(config *Config) *goproxy.ProxyHttpServer {
 		proxy.OnRequest().HandleConnect(goproxy.AlwaysReject)
 	}
 
+	proxy.Tr = utils.GetTransport(
+		config.InsecureCipherSuites,
+		p.defaultRoute.Proxy, // proxy which is used when "AlwaysMitm" hits
+	)
 	if p.defaultRoute.Proxy != nil {
-		// proxy which is used when "AlwaysMitm" hits
-		proxy.Tr = &http.Transport{
-			Proxy: func(req *http.Request) (*url.URL, error) {
-				return p.defaultRoute.Proxy, nil
-			},
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
 		// proxy which is used when "AlwaysMitm" doesn't hits
 		proxy.ConnectDial = proxy.NewConnectDialToProxy(p.defaultRoute.Proxy.String())
 	}
