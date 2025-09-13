@@ -55,7 +55,7 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 	for k, v := range successInfo {
 		args = append(args, k, v)
 	}
-	p.logger.Info("request matched a route", args...)
+	p.logger.Info("Request matched a route", args...)
 
 	return req, res
 }
@@ -94,7 +94,7 @@ func SetupProxy(config *Config) *goproxy.ProxyHttpServer {
 		router:          config.Router,
 		hostToCertCache: cache.NewLRUCache[string, *tls.Config](MAX_TLS_CERT_CACHE_SIZE),
 	}
-	config.Logger.Info("Proxy has been configured", "route pattern length", len(config.Router.GetUrlList()))
+	config.Logger.Info("Proxy has been configured")
 	return p.getProxyHttpServer()
 }
 

@@ -5,27 +5,35 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kajikentaro/flexy-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/models/rewrite"
 )
 
-func NewReverseProxyTransport(forwardUrl *url.URL, proxyUrl *url.URL) models.RoundTripper {
+func NewReverseProxyTransport(proxyUrl *url.URL, urlRewriter *rewrite.Rewrite) http.RoundTripper {
 	return &ReverseProxyTransport{
-		forwardUrl: forwardUrl,
-		proxyUrl:   proxyUrl,
+		proxyUrl:    proxyUrl,
+		urlRewriter: urlRewriter,
 	}
 }
 
 type ReverseProxyTransport struct {
-	forwardUrl *url.URL
-	proxyUrl   *url.URL
+	proxyUrl    *url.URL
+	urlRewriter *rewrite.Rewrite
 }
 
 func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	forwardUrl := r.URL
+	if c.urlRewriter != nil {
+		var err error
+		if forwardUrl, err = c.urlRewriter.Replace(r.URL); err != nil {
+			return nil, err
+		}
+	}
+
 	rr := r.Clone(r.Context())
-	rr.URL = c.forwardUrl
+	rr.URL = forwardUrl
 	// NOTE:
 	// we should update host manually; otherwise, the original host remains
-	rr.Host = c.forwardUrl.Host
+	rr.Host = forwardUrl.Host
 
 	t := http.DefaultTransport.(*http.Transport).Clone()
 	t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -40,20 +48,7 @@ func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, erro
 		return nil, err
 	}
 
+	res.Header.Set(HEADER_RESPONSE_TYPE, "rewrite")
+	res.Header.Set(HEADER_REWRITE_TO, forwardUrl.String())
 	return res, nil
-}
-
-func (c *ReverseProxyTransport) GetType() string {
-	return "reverse proxy"
-}
-
-func (c *ReverseProxyTransport) GetResponseInfo() map[string]string {
-	proxy := "None"
-	if c.proxyUrl != nil {
-		proxy = c.proxyUrl.String()
-	}
-	return map[string]string{
-		"forward_url": c.forwardUrl.String(),
-		"proxy":       proxy,
-	}
 }

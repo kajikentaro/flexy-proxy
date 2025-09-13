@@ -38,7 +38,7 @@ func TestIsRegexp(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	t.Run("Success case", func(t *testing.T) {
-		routes := []models.Route{
+		routes := []models.RouteConf{
 			{Url: "http://example.com"},
 			{Url: "https://secure.com"},
 		}
@@ -53,7 +53,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("Invalid scheme or empty scheme (not http or https)", func(t *testing.T) {
-		routes := []models.Route{
+		routes := []models.RouteConf{
 			{Url: "ftp://example.com"},
 			{Url: "example.com"},
 		}
@@ -63,7 +63,7 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("Invalid URL (empty hostname)", func(t *testing.T) {
-		routes := []models.Route{
+		routes := []models.RouteConf{
 			{Url: "http://"},
 			{Url: "https://"},
 		}
@@ -76,7 +76,7 @@ func TestParse(t *testing.T) {
 
 func TestCalcHttpsHostList(t *testing.T) {
 	t.Run("isRegexp:true && HTTP", func(t *testing.T) {
-		routes := []models.Route{
+		routes := []models.RouteConf{
 			{
 				Url:   "http://.*example.*",
 				Regex: true,
@@ -88,7 +88,7 @@ func TestCalcHttpsHostList(t *testing.T) {
 	})
 
 	t.Run("isRegexp:true && HTTPS", func(t *testing.T) {
-		routes := []models.Route{
+		routes := []models.RouteConf{
 			{
 				Url:   "https://.*example.*",
 				Regex: true,
@@ -110,7 +110,7 @@ func mustParseURL(t *testing.T, raw string) *url.URL {
 }
 
 func TestGetMatchedRoute(t *testing.T) {
-	routes := []models.Route{
+	routes := []models.RouteConf{
 		{
 			Url: "http://example.test",
 		},
@@ -126,12 +126,12 @@ func TestGetMatchedRoute(t *testing.T) {
 		},
 	}
 
-	router, err := GenRouter(routes, nil, true)
+	router, err := NewRouter(routes, nil, true)
 	require.NoError(t, err)
 
 	tests := []struct {
 		input    string
-		expected models.Route
+		expected models.RouteConf
 	}{
 		{"http://example.test", routes[0]},
 		{"https://secure.test", routes[1]},
@@ -151,7 +151,7 @@ func TestGetMatchedRoute(t *testing.T) {
 
 // https://github.com/kajikentaro/flexy-proxy/issues/7
 func TestAlwaysMitmWithRegex(t *testing.T) {
-	router, err := GenRouter([]models.Route{{Url: "https://example\\.test", Regex: true}, {Url: "https://foo.test"}}, nil, true)
+	router, err := NewRouter([]models.RouteConf{{Url: "https://example\\.test", Regex: true}, {Url: "https://foo.test"}}, nil, true)
 	require.NoError(t, err)
 
 	hostList := router.GetHttpsHostList()
@@ -159,13 +159,13 @@ func TestAlwaysMitmWithRegex(t *testing.T) {
 }
 
 func TestRegexRouteDoesNotMatchQueryParam(t *testing.T) {
-	routes := []models.Route{
+	routes := []models.RouteConf{
 		{
 			Url:   "https://foo.dev",
 			Regex: true,
 		},
 	}
-	router, err := GenRouter(routes, nil, true)
+	router, err := NewRouter(routes, nil, true)
 	require.NoError(t, err)
 
 	input := "https://example.com?callback=https://foo.dev"
