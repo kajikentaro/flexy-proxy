@@ -10,6 +10,7 @@ import (
 
 	"github.com/kajikentaro/flexy-proxy/loggers"
 	"github.com/kajikentaro/flexy-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/utils"
 	"github.com/kajikentaro/flexy-proxy/utils/cache"
 
 	"github.com/elazarl/goproxy"
@@ -55,14 +56,13 @@ func (p *Proxy) onRequest(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Reque
 	for k, v := range successInfo {
 		args = append(args, k, v)
 	}
-	p.logger.Info("request matched a route", args...)
+	p.logger.Info("Request matched a route", args...)
 
 	return req, res
 }
 
 type Proxy struct {
 	defaultRoute    DefaultRoute
-	alwaysMitm      bool
 	certificate     *tls.Certificate
 	logger          *loggers.Logger
 	router          models.Router
@@ -70,11 +70,13 @@ type Proxy struct {
 }
 
 type Config struct {
-	DefaultRoute DefaultRoute
-	AlwaysMitm   bool
-	Certificate  *tls.Certificate
-	Logger       *loggers.Logger
-	Router       models.Router
+	DefaultRoute         DefaultRoute
+	AlwaysMitm           bool
+	Certificate          *tls.Certificate
+	Logger               *loggers.Logger
+	Router               models.Router
+	HttpsHostNames       []string
+	InsecureCipherSuites bool
 }
 
 type DefaultRoute struct {
@@ -88,14 +90,13 @@ var MAX_TLS_CERT_CACHE_SIZE = 10000000
 func SetupProxy(config *Config) *goproxy.ProxyHttpServer {
 	p := &Proxy{
 		defaultRoute:    config.DefaultRoute,
-		alwaysMitm:      config.AlwaysMitm,
 		certificate:     config.Certificate,
 		logger:          config.Logger,
 		router:          config.Router,
 		hostToCertCache: cache.NewLRUCache[string, *tls.Config](MAX_TLS_CERT_CACHE_SIZE),
 	}
-	config.Logger.Info("Proxy has been configured", "route pattern length", len(config.Router.GetUrlList()))
-	return p.getProxyHttpServer()
+	config.Logger.Info("Proxy has been configured")
+	return p.getProxyHttpServer(config)
 }
 
 // TODO: if we can use *goproxy.ProxyCtx.certStore, we can simplify this code
@@ -124,16 +125,15 @@ func (p *Proxy) eavesDropHttp(host string, ctx *goproxy.ProxyCtx) (*goproxy.Conn
 	}, host
 }
 
-func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
+func (p *Proxy) getProxyHttpServer(config *Config) *goproxy.ProxyHttpServer {
 	proxy := goproxy.NewProxyHttpServer()
 	proxy.Logger = GenLoggerForProxy(p.logger)
 	proxy.Verbose = true
 
-	if p.alwaysMitm {
+	if config.AlwaysMitm {
 		proxy.OnRequest().HandleConnectFunc(p.eavesDropHttp)
 	} else {
-		hosts := p.router.GetHttpsHostList()
-		proxy.OnRequest(goproxy.ReqHostIs(hosts...)).HandleConnectFunc(p.eavesDropHttp)
+		proxy.OnRequest(goproxy.ReqHostIs(config.HttpsHostNames...)).HandleConnectFunc(p.eavesDropHttp)
 	}
 
 	proxy.OnRequest().DoFunc(p.onRequest)
@@ -142,14 +142,11 @@ func (p *Proxy) getProxyHttpServer() *goproxy.ProxyHttpServer {
 		proxy.OnRequest().HandleConnect(goproxy.AlwaysReject)
 	}
 
+	proxy.Tr = utils.GetTransport(
+		config.InsecureCipherSuites,
+		p.defaultRoute.Proxy, // proxy which is used when "AlwaysMitm" hits
+	)
 	if p.defaultRoute.Proxy != nil {
-		// proxy which is used when "AlwaysMitm" hits
-		proxy.Tr = &http.Transport{
-			Proxy: func(req *http.Request) (*url.URL, error) {
-				return p.defaultRoute.Proxy, nil
-			},
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
 		// proxy which is used when "AlwaysMitm" doesn't hits
 		proxy.ConnectDial = proxy.NewConnectDialToProxy(p.defaultRoute.Proxy.String())
 	}

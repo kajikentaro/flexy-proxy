@@ -38,6 +38,12 @@
       "description": "If true, eavesdrop all HTTPS access to get the full URL. If false, only eavesdrop HTTP access if the host name matches.",
       "examples": [true]
     },
+    "insecure_cipher_suites": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to allow insecure cipher suites for HTTPS connections. This may be necessary for compatibility with some older clients.",
+      "examples": [true]
+    },
     "routes": {
       "type": "array",
       "default": [],
