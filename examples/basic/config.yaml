@@ -1,0 +1,19 @@
+# Example of basic configuration file.
+
+routes:
+  # If the request URL is "https://www.google.com", show content from "https://example.com" instead.
+  - url: "https://www.google.com"
+    response:
+      rewrite:
+        to: "https://example.com"
+
+  # If the request URL is "https://foo.test", respond with "foo test".
+  - url: "https://foo.test"
+    response:
+      content: "foo test\n"
+
+  # If the request URL is "http://bar.test", respond with the content of the file "bar.txt".
+  - url: "https://bar.test"
+    response:
+      file: "bar.txt"
+      
