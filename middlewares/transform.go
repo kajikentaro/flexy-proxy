@@ -70,6 +70,7 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 			"REQ_BODY="+string(reqBody),
 			"REQ_HEADER="+string(reqHeader),
 			"RES_HEADER="+string(resHeader),
+			"URL="+r.URL.String(),
 		)
 		cmd.Env = env
 		cmd.Stdin = res.Body

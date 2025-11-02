@@ -1,0 +1,14 @@
+# Example configuration file with a CA certificate.
+# You can install "server.crt" as a trusted CA in your system to avoid TLS errors.
+
+routes:
+  - url: "https://example.com"
+    regex: false
+    response:
+      content: "This is an response from Flexy Proxy\n"
+      headers:
+        Content-Type: "text/plain"
+
+certificate: "server.pem"
+certificate_key: "server.key"
+

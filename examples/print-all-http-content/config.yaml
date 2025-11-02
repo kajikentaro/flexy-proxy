@@ -1,0 +1,12 @@
+# Example configuration file to print all HTTP Request, Response and its Headers.
+# You can see "output.txt" file for the printed content.
+
+routes:
+  - url: "https://.*"
+    regex: true
+    response:
+      transform: "bash transform.sh"
+  - url: "http://.*"
+    regex: true
+    response:
+      transform: "bash transform.sh"
