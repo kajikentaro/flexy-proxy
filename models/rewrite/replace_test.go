@@ -116,3 +116,31 @@ func TestMarshalYaml(t *testing.T) {
 		assert.Equal(t, expected, string(marshaled))
 	})
 }
+
+func TestReplaceEmpty(t *testing.T) {
+	t.Run("'from' and 'to' are empty", func(t *testing.T) {
+		r := &Rewrite{}
+		input, _ := url.ParseRequestURI("http://original.url")
+		actual, err := r.Replace(input)
+		assert.NoError(t, err)
+		assert.Equal(t, input, actual)
+	})
+
+	t.Run("'to' is empty", func(t *testing.T) {
+		r := &Rewrite{advancedOptions: advancedOptions{From: "original"}}
+		input, _ := url.ParseRequestURI("http://original.url")
+		actual, err := r.Replace(input)
+		assert.NoError(t, err)
+		assert.Equal(t, input, actual)
+	})
+
+	t.Run("'from' is empty", func(t *testing.T) {
+		r := &Rewrite{advancedOptions: advancedOptions{To: "http://target.url"}}
+		input, _ := url.ParseRequestURI("http://original.url")
+		actual, err := r.Replace(input)
+		assert.NoError(t, err)
+		expected, _ := url.ParseRequestURI("http://target.url")
+		assert.Equal(t, expected, actual)
+	})
+
+}
