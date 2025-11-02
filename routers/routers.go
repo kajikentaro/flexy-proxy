@@ -27,7 +27,7 @@ type ActiveRoute struct {
 
 var regHttpOrHttps = regexp.MustCompile(`^https?://`)
 
-func parse(config *models.RawConfig) ([]ActiveRoute, error) {
+func parse(config *models.RawConfig, workDir string) ([]ActiveRoute, error) {
 	var defaultProxy *url.URL
 	if config.DefaultRoute.Proxy != "" {
 		var err error
@@ -142,6 +142,7 @@ func parse(config *models.RawConfig) ([]ActiveRoute, error) {
 			r.Response.Status,
 			r.Response.Headers,
 			r.parsedTransformCommand,
+			workDir,
 		)
 
 		route := ActiveRoute{
@@ -157,8 +158,8 @@ func parse(config *models.RawConfig) ([]ActiveRoute, error) {
 	return roundTrippers, nil
 }
 
-func NewRouter(config *models.RawConfig) (models.Router, error) {
-	routes, err := parse(config)
+func NewRouter(config *models.RawConfig, workDir string) (models.Router, error) {
+	routes, err := parse(config, workDir)
 	if err != nil {
 		return nil, err
 	}
