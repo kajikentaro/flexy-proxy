@@ -26,7 +26,8 @@ func ParseConfig(configPath string) (*proxy.Config, error) {
 		return nil, err
 	}
 
-	proxyConfig, err := parseRawConfig(rawConfig)
+	configFileDir := filepath.Dir(configPath)
+	proxyConfig, err := parseRawConfig(rawConfig, configFileDir)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +96,38 @@ func convertToError(errs []gojsonschema.ResultError) error {
 	return errors.New(text)
 }
 
-func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
-	router, err := routers.NewRouter(rawConfig)
+func loadCertificate(certPath string, certKeyPath string, baseDir string) (*tls.Certificate, error) {
+	if certPath == "" && certKeyPath == "" {
+		return nil, nil
+	}
+
+	if certPath == "" || certKeyPath == "" {
+		return nil, fmt.Errorf("both 'certificate' and 'certificate_key' should be specified in the config file")
+	}
+
+	if !filepath.IsAbs(certPath) {
+		certPath = filepath.Join(baseDir, certPath)
+	}
+	if !filepath.IsAbs(certKeyPath) {
+		certKeyPath = filepath.Join(baseDir, certKeyPath)
+	}
+
+	if _, err := os.Stat(certPath); errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("certificate, '%s', does not exist", certPath)
+	}
+	if _, err := os.Stat(certKeyPath); errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("certificate_key, '%s', does not exist", certKeyPath)
+	}
+	cert, err := tls.LoadX509KeyPair(certPath, certKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load certificate: %w", err)
+	}
+
+	return &cert, nil
+}
+
+func parseRawConfig(rawConfig *models.RawConfig, configFileDir string) (*proxy.Config, error) {
+	router, err := routers.NewRouter(rawConfig, configFileDir)
 	if err != nil {
 		return nil, err
 	}
@@ -111,23 +142,9 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 		}
 	}
 
-	// load certificates
-	var cer *tls.Certificate
-	if rawConfig.Certificate != "" || rawConfig.CertificateKey != "" {
-		if rawConfig.Certificate == "" || rawConfig.CertificateKey == "" {
-			return nil, fmt.Errorf("both 'certificate' and 'certificate_key' should be specified in the config file")
-		}
-		if _, err := os.Stat(rawConfig.Certificate); errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("certificate, '%s', does not exist", rawConfig.Certificate)
-		}
-		if _, err := os.Stat(rawConfig.CertificateKey); errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("certificate_key, '%s', does not exist", rawConfig.CertificateKey)
-		}
-		cer_, err := tls.LoadX509KeyPair(rawConfig.Certificate, rawConfig.CertificateKey)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load certificate: %w", err)
-		}
-		cer = &cer_
+	cer, err := loadCertificate(rawConfig.Certificate, rawConfig.CertificateKey, configFileDir)
+	if err != nil {
+		return nil, err
 	}
 
 	logLevelStr := "INFO"
@@ -168,6 +185,7 @@ func parseRawConfig(rawConfig *models.RawConfig) (*proxy.Config, error) {
 		"default_route_proxy", rawConfig.DefaultRoute.Proxy,
 		"default_route_deny_access", rawConfig.DefaultRoute.DenyAccess,
 		"log_level", logLevelStr,
+		"config_dir", configFileDir,
 	)
 	return proxyConfig, nil
 }

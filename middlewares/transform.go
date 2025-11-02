@@ -10,14 +10,16 @@ import (
 	"strings"
 )
 
-func NewTransform(command *[]string) *Transform {
+func NewTransform(command *[]string, workDir string) *Transform {
 	return &Transform{
 		command: command,
+		workDir: workDir,
 	}
 }
 
 type Transform struct {
 	command *[]string
+	workDir string
 }
 
 func isProbablyText(contentType string) bool {
@@ -80,6 +82,7 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 
 		res.Body = pr
 
+		cmd.Dir = t.workDir
 		if err := cmd.Start(); err != nil {
 			return nil, err
 		}

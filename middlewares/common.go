@@ -4,12 +4,13 @@ import (
 	"net/http"
 )
 
-func NewCommonMiddleware(contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string) *CommonMiddleware {
+func NewCommonMiddleware(contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string, workDir string) *CommonMiddleware {
 	return &CommonMiddleware{
 		contentType:            contentType,
 		statusCode:             statusCode,
 		headers:                headers,
 		parsedTransformCommand: parsedTransformCommand,
+		workDir:                workDir,
 	}
 }
 
@@ -18,6 +19,7 @@ type CommonMiddleware struct {
 	contentType            string
 	headers                map[string]string
 	parsedTransformCommand *[]string
+	workDir                string
 }
 
 func (h *CommonMiddleware) Middleware(next http.RoundTripper) http.RoundTripper {
@@ -28,7 +30,7 @@ func (h *CommonMiddleware) Middleware(next http.RoundTripper) http.RoundTripper 
 		if h.parsedTransformCommand == nil {
 			res, err = next.RoundTrip(r)
 		} else {
-			transform := NewTransform(h.parsedTransformCommand)
+			transform := NewTransform(h.parsedTransformCommand, h.workDir)
 			res, err = transform.Middleware(next).RoundTrip(r)
 		}
 

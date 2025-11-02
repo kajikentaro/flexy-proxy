@@ -50,7 +50,7 @@ func TestDummyStreamItself(t *testing.T) {
 
 func TestTransformStream(t *testing.T) {
 	command := []string{"sed", "-u", "-e", "s/data/DATA/g"}
-	transform := middlewares.NewTransform(&command)
+	transform := middlewares.NewTransform(&command, ".")
 
 	req := httptest.NewRequest(http.MethodGet, "http://example.test", nil)
 	res, err := transform.Middleware(dummyStream{}).RoundTrip(req)
@@ -62,7 +62,7 @@ func TestTransformStream(t *testing.T) {
 
 func TestTransformStreamStdErr(t *testing.T) {
 	command := []string{"bash", "-c", "sed -u -e 's/data/DATA/g' >&2"}
-	transform := middlewares.NewTransform(&command)
+	transform := middlewares.NewTransform(&command, ".")
 
 	req := httptest.NewRequest(http.MethodGet, "http://example.test", nil)
 	res, err := transform.Middleware(dummyStream{}).RoundTrip(req)
