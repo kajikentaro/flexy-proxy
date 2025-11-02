@@ -69,71 +69,17 @@ For more details on configurations, visit:
 
 ### Example
 
-`config.yaml`
+For an example configuration, please refer to [examples/basic/config.yaml](examples/basic/config.yaml) in the repository.
 
-```yaml
-default_route:
-  deny_access: true
-
-log_level: "INFO"
-always_mitm: true
-
-routes:
-  # If the request URL is "https://example.com/user/[user_id]/post/[post_id]",
-  # reverse proxy to "https://example.com/api?user=[user_id]&post=[post_id]".
-  - url: "https://example.com/user/[^/]+/post/[^/]"
-    regex: true
-    response:
-      rewrite:
-        from: '^https://example\\.com/user/([^/]+)/post/([^/]+)'
-        to: "https://example.com/api?user=$1&post=$2"
-        regex: true
-  # If the request URL is "https://example.com/not-found",
-  # return the content "not found" with 404 status code.
-  - url: "https://example.com/not-found"
-    regex: false
-    response:
-      content: "not found"
-      content_type: "text/plain"
-      status: 404
-  # If the request URL is "https://example.com/[any character].png",
-  # return the file: "./sample.png"
-  - url: 'https://example.com/.*\.png'
-    regex: true
-    response:
-      file: "sample.png"
-  # If the request URL is "https://example.com/proxy",
-  # reverse proxy to "https://example.com/api" using a specific proxy.
-  - url: "https://example.com/proxy"
-    regex: false
-    response:
-      rewrite:
-        from: "https://example.com/proxy"
-        to: "https://example.com/api"
-        regex: false
-        proxy: "http://proxy.example.com"
-  # If the request URL is "https://content.test",
-  # return the content "content XD" with a custom header.
-  - url: "https://content.test"
-    regex: false
-    response:
-      content: "content XD"
-      headers:
-        "Access-Control-Allow-Origin": "*"
-  # If the request URL is "https://content.test/",
-  # transform the response body "foo" to "bar" using a sed command.
-  - url: "https://content.test/"
-    regex: false
-    response:
-      transform: "sed -E 's/foo/bar/g'"
-  # If the request URL is "https://content.test/",
-  # log both the response content and request body to separate files.
-  # (the `REQ_BODY` environment variable will contain the request body)
-  - url: "https://content.test/"
-    regex: false
-    response:
-      transform: "bash -c 'tee -a ./response.txt ; echo $REQ_BODY >> ./request.txt';"
 ```
+routes:
+  # If the request URL is "https://www.google.com", show content from "https://example.com" instead.
+  - url: "https://www.google.com"
+    response:
+      rewrite:
+        to: "https://example.com"
+```
+
 
 ## Certificates
 

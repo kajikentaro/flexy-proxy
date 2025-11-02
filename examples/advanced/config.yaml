@@ -1,0 +1,67 @@
+default_route:
+  deny_access: true
+
+log_level: "INFO"
+always_mitm: true
+
+routes:
+  # If the request URL is "https://example.test/user/[user_id]/post/[post_id]",
+  # reverse proxy to "https://example.test/api?user=[user_id]&post=[post_id]".
+  - url: "https://example.test/user/[^/]+/post/[^/]"
+    regex: true
+    response:
+      rewrite:
+        from: '^https://example\\.com/user/([^/]+)/post/([^/]+)'
+        to: "https://example.test/api?user=$1&post=$2"
+        regex: true
+
+  # If the request URL is "https://example.test/not-found",
+  # return the content "not found" with 404 status code.
+  - url: "https://example.test/not-found"
+    regex: false
+    response:
+      content: "not found"
+      content_type: "text/plain"
+      status: 404
+
+  # If the request URL is "https://example.test/[any character].png",
+  # return the file: "./sample.png"
+  - url: 'https://example.test/.*\.png'
+    regex: true
+    response:
+      file: "sample.png"
+
+  # If the request URL is "https://example.test/proxy",
+  # reverse proxy to "https://example.test/api" using a specific proxy.
+  - url: "https://example.test/proxy"
+    regex: false
+    response:
+      rewrite:
+        from: "https://example.test/proxy"
+        to: "https://example.test/api"
+        regex: false
+        proxy: "http://proxy.example.test"
+
+  # If the request URL is "https://content.test",
+  # return the content "content XD" with a custom header.
+  - url: "https://content.test"
+    regex: false
+    response:
+      content: "content XD"
+      headers:
+        "Access-Control-Allow-Origin": "*"
+
+  # If the request URL is "https://replacement.test/",
+  # transform the response body "foo" to "bar" using a sed command.
+  - url: "https://replacement.test/"
+    regex: false
+    response:
+      transform: "sed -E 's/foo/bar/g'"
+
+  # If the request URL is "https://log.test/",
+  # log both the response content and request body to separate files.
+  # (the `REQ_BODY` environment variable will contain the request body)
+  - url: "https://log.test/"
+    regex: false
+    response:
+      transform: "bash -c 'tee -a ./response.txt ; echo $REQ_BODY >> ./request.txt';"
