@@ -126,3 +126,16 @@ func TestTransformMiddlewareNonTextContent(t *testing.T) {
 	errorMessage := "BODY env variable is only available for text content types\n"
 	assert.Equal(t, errorMessage, string(resBody))
 }
+
+func TestURLEnvironmentVariable(t *testing.T) {
+	command := []string{"bash", "-c", "echo $URL"}
+	transform := middlewares.NewTransform(&command)
+
+	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
+	res, err := transform.Middleware(dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
+	require.NoError(t, err)
+
+	resBody, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	assert.Equal(t, "http://example.com\n", string(resBody))
+}
