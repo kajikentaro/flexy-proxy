@@ -121,8 +121,8 @@ func parse(config *models.RawConfig, workDir string) ([]ActiveRoute, error) {
 		}
 
 		if route.Response.File != nil {
-			h := NewFileResponder(*route.Response.File)
-			return h, nil
+			h, err := NewFileResponder(*route.Response.File, workDir)
+			return h, err
 		}
 
 		// by default, return this

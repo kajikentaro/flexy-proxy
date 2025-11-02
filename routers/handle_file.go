@@ -7,10 +7,20 @@ import (
 	"path/filepath"
 )
 
-func NewFileResponder(filePath string) http.RoundTripper {
-	return &FileResponder{
-		filePath: filePath,
+func NewFileResponder(file string, workDir string) (http.RoundTripper, error) {
+	fileAbsPath := file
+	if !filepath.IsAbs(fileAbsPath) {
+		joined := filepath.Join(workDir, file)
+		_fileAbsPath, err := filepath.Abs(joined)
+		if err != nil {
+			return nil, err
+		}
+		fileAbsPath = _fileAbsPath
 	}
+
+	return &FileResponder{
+		filePath: fileAbsPath,
+	}, nil
 }
 
 type FileResponder struct {
