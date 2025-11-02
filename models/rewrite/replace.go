@@ -69,6 +69,20 @@ func (u *Rewrite) Replace(inputUrl *url.URL) (*url.URL, error) {
 		return newUrl, nil
 	}
 
+	// no replacement
+	if u.To == "" {
+		return inputUrl, nil
+	}
+
+	// use "To" without replacing
+	if u.From == "" {
+		newUrl, err := url.ParseRequestURI(u.To)
+		if err != nil {
+			return nil, newUrlRewriteError(fmt.Sprintf("invalid url in 'rewrite': %s", u.To), err)
+		}
+		return newUrl, nil
+	}
+
 	// pattern #2
 	if !u.Regex {
 		inputStr := inputUrl.String()
