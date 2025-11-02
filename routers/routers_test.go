@@ -16,7 +16,7 @@ func TestParse(t *testing.T) {
 				{Url: "http://example.com"},
 				{Url: "https://secure.com"},
 			}}
-		actual, err := parse(config)
+		actual, err := parse(config, ".")
 		require.NoError(t, err)
 
 		assert.Nil(t, actual[0].regexUrl)
@@ -34,7 +34,7 @@ func TestParse(t *testing.T) {
 				{Url: "example.com"},
 			},
 		}
-		actual, err := parse(config)
+		actual, err := parse(config, ".")
 		assert.ErrorContains(t, err, "URL must start with https:// or http://")
 		assert.Nil(t, actual)
 	})
@@ -45,7 +45,7 @@ func TestParse(t *testing.T) {
 				{Url: "http://"},
 				{Url: "https://"},
 			}}
-		actual, err := parse(config)
+		actual, err := parse(config, ".")
 		assert.ErrorContains(t, err, "URL must have a host")
 		assert.Nil(t, actual)
 	})
@@ -79,7 +79,7 @@ func TestGetMatchedRoute(t *testing.T) {
 			},
 		}}
 
-	router, err := NewRouter(config)
+	router, err := NewRouter(config, ".")
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -110,7 +110,7 @@ func TestRegexRouteDoesNotMatchQueryParam(t *testing.T) {
 				Regex: true,
 			},
 		}}
-	router, err := NewRouter(config)
+	router, err := NewRouter(config, ".")
 	require.NoError(t, err)
 
 	input := "https://example.com?callback=https://foo.dev"

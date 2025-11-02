@@ -62,7 +62,7 @@ func TestTransformMiddleware(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			transform := middlewares.NewTransform(&tt.command)
+			transform := middlewares.NewTransform(&tt.command, ".")
 
 			req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader([]byte(tt.requestBody)))
 			req.Header.Set("Content-Type", tt.contentType)
@@ -80,7 +80,7 @@ func TestTransformMiddleware(t *testing.T) {
 
 func TestTransformMiddlewareErrorCase(t *testing.T) {
 	command := []string{"invalid_command"}
-	transform := middlewares.NewTransform(&command)
+	transform := middlewares.NewTransform(&command, ".")
 
 	// Test for error case when the command is invalid
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
@@ -93,7 +93,7 @@ func TestTransformMiddlewareErrorCase(t *testing.T) {
 
 func TestTransformMiddlewareLargeBody(t *testing.T) {
 	command := []string{"bash", "-c", "echo $REQ_BODY"}
-	transform := middlewares.NewTransform(&command)
+	transform := middlewares.NewTransform(&command, ".")
 
 	largeBody := bytes.Repeat([]byte("a"), 1024*1024+1)
 
@@ -112,7 +112,7 @@ func TestTransformMiddlewareLargeBody(t *testing.T) {
 
 func TestTransformMiddlewareNonTextContent(t *testing.T) {
 	command := []string{"bash", "-c", "echo $REQ_BODY"}
-	transform := middlewares.NewTransform(&command)
+	transform := middlewares.NewTransform(&command, ".")
 
 	// Test for non-text content handling
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader([]byte("binary data")))
@@ -129,13 +129,28 @@ func TestTransformMiddlewareNonTextContent(t *testing.T) {
 
 func TestURLEnvironmentVariable(t *testing.T) {
 	command := []string{"bash", "-c", "echo $URL"}
-	transform := middlewares.NewTransform(&command)
+	transform := middlewares.NewTransform(&command, ".")
 
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
-	res, err := transform.Middleware(dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
+	res, err := transform.Middleware(dummyRoundTripper{}).RoundTrip(req)
 	require.NoError(t, err)
 
 	resBody, err := io.ReadAll(res.Body)
 	require.NoError(t, err)
 	assert.Equal(t, "http://example.com\n", string(resBody))
+}
+
+func TestWorkingDirectory(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	command := []string{"pwd"}
+	transform := middlewares.NewTransform(&command, tmpDir)
+
+	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
+	res, err := transform.Middleware(dummyRoundTripper{}).RoundTrip(req)
+	require.NoError(t, err)
+
+	resBody, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	assert.Equal(t, tmpDir+"\n", string(resBody))
 }
