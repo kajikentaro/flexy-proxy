@@ -38,11 +38,6 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 		// NOTE: if the response body is compressed, we can't use string replacement commands like 'sed'.
 		r.Header.Del("Accept-Encoding")
 
-		res, err := next.RoundTrip(r)
-		if err != nil {
-			return nil, err
-		}
-
 		var reqBody []byte
 		if r.ContentLength > 1024*1024 {
 			reqBody = []byte("BODY env variable is only available for requests with Content-Length less than 1MB")
@@ -58,6 +53,11 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 		}
 
 		reqHeader, err := json.Marshal(r.Header)
+		if err != nil {
+			return nil, err
+		}
+
+		res, err := next.RoundTrip(r)
 		if err != nil {
 			return nil, err
 		}
