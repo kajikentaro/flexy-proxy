@@ -138,6 +138,7 @@ func parse(config *models.RawConfig, workDir string) ([]ActiveRoute, error) {
 		}
 
 		common := middlewares.NewCommonMiddleware(
+			r.Request.Headers,
 			r.Response.ContentType,
 			r.Response.Status,
 			r.Response.Headers,

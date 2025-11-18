@@ -4,11 +4,12 @@ import (
 	"net/http"
 )
 
-func NewCommonMiddleware(contentType string, statusCode int, headers map[string]string, parsedTransformCommand *[]string, workDir string) *CommonMiddleware {
+func NewCommonMiddleware(reqHeaders map[string]string, contentType string, statusCode int, resHeaders map[string]string, parsedTransformCommand *[]string, workDir string) *CommonMiddleware {
 	return &CommonMiddleware{
 		contentType:            contentType,
 		statusCode:             statusCode,
-		headers:                headers,
+		reqHeaders:             reqHeaders,
+		resHeaders:             resHeaders,
 		parsedTransformCommand: parsedTransformCommand,
 		workDir:                workDir,
 	}
@@ -17,7 +18,8 @@ func NewCommonMiddleware(contentType string, statusCode int, headers map[string]
 type CommonMiddleware struct {
 	statusCode             int
 	contentType            string
-	headers                map[string]string
+	reqHeaders             map[string]string
+	resHeaders             map[string]string
 	parsedTransformCommand *[]string
 	workDir                string
 }
@@ -26,6 +28,10 @@ func (h *CommonMiddleware) Middleware(next http.RoundTripper) http.RoundTripper 
 	return roundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		var res *http.Response
 		var err error
+
+		for k, v := range h.reqHeaders {
+			r.Header.Set(k, v)
+		}
 
 		if h.parsedTransformCommand == nil {
 			res, err = next.RoundTrip(r)
@@ -48,7 +54,7 @@ func (h *CommonMiddleware) Middleware(next http.RoundTripper) http.RoundTripper 
 			res.StatusCode = h.statusCode
 		}
 
-		for v, k := range h.headers {
+		for v, k := range h.resHeaders {
 			res.Header.Set(v, k)
 		}
 
