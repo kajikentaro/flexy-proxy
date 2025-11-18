@@ -23,6 +23,10 @@ func (d *dummyRoundTripper) RoundTrip(req *http.Request) (*http.Response, error)
 	res.Header().Set("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusOK)
 	res.Body.Write([]byte(d.resBody))
+	_, err := io.ReadAll(req.Body)
+	if err != nil {
+		panic(err)
+	}
 	return res.Result(), nil
 }
 
