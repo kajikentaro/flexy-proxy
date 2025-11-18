@@ -51,7 +51,7 @@
       "items": {
         "type": "object",
         "description": "A single route configuration.",
-        "required": ["url", "response"],
+        "required": ["url"],
         "additionalProperties": false,
         "properties": {
           "url": {
@@ -67,6 +67,19 @@
             "description": "If true, regex can be used for URL matching.",
             "default": false,
             "examples": [false]
+          },
+          "request": {
+            "type": "object",
+            "headers": {
+              "type": "object",
+              "default": {},
+              "description": "Additional headers to include in the request.",
+              "examples": [
+                {
+                  "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X)"
+                }
+              ]
+            }
           },
           "response": {
             "type": ["object", "null"],

@@ -44,4 +44,7 @@ type RouteConf struct {
 		Headers     map[string]string
 		Transform   string
 	}
+	Request struct {
+		Headers map[string]string
+	}
 }

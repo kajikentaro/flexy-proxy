@@ -13,10 +13,12 @@ import (
 )
 
 type dummyRoundTripper struct {
-	resBody string
+	resBody    string
+	captureReq *http.Request
 }
 
-func (d dummyRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (d *dummyRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	d.captureReq = req
 	res := httptest.NewRecorder()
 	res.Header().Set("Content-Type", "text/plain")
 	res.WriteHeader(http.StatusOK)
@@ -67,7 +69,7 @@ func TestTransformMiddleware(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader([]byte(tt.requestBody)))
 			req.Header.Set("Content-Type", tt.contentType)
 
-			res, err := transform.Middleware(dummyRoundTripper{resBody: tt.responseBody}).RoundTrip(req)
+			res, err := transform.Middleware(&dummyRoundTripper{resBody: tt.responseBody}).RoundTrip(req)
 			require.NoError(t, err)
 			assert.Equal(t, http.StatusOK, res.StatusCode)
 			assert.Equal(t, "text/plain", res.Header.Get("Content-Type"))
@@ -86,7 +88,7 @@ func TestTransformMiddlewareErrorCase(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
 	req.Header.Set("Content-Type", "text/plain")
 
-	res, err := transform.Middleware(dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
+	res, err := transform.Middleware(&dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
 	assert.Error(t, err)
 	assert.Nil(t, res)
 }
@@ -101,7 +103,7 @@ func TestTransformMiddlewareLargeBody(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader(largeBody))
 	req.Header.Set("Content-Type", "text/plain")
 
-	res, err := transform.Middleware(dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
+	res, err := transform.Middleware(&dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 	resBody, err := io.ReadAll(res.Body)
@@ -118,7 +120,7 @@ func TestTransformMiddlewareNonTextContent(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", bytes.NewReader([]byte("binary data")))
 	req.Header.Set("Content-Type", "application/octet-stream")
 
-	res, err := transform.Middleware(dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
+	res, err := transform.Middleware(&dummyRoundTripper{resBody: "foo"}).RoundTrip(req)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 	resBody, err := io.ReadAll(res.Body)
@@ -132,7 +134,7 @@ func TestURLEnvironmentVariable(t *testing.T) {
 	transform := middlewares.NewTransform(&command, ".")
 
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
-	res, err := transform.Middleware(dummyRoundTripper{}).RoundTrip(req)
+	res, err := transform.Middleware(&dummyRoundTripper{}).RoundTrip(req)
 	require.NoError(t, err)
 
 	resBody, err := io.ReadAll(res.Body)
@@ -147,7 +149,7 @@ func TestWorkingDirectory(t *testing.T) {
 	transform := middlewares.NewTransform(&command, tmpDir)
 
 	req := httptest.NewRequest(http.MethodPost, "http://example.com", nil)
-	res, err := transform.Middleware(dummyRoundTripper{}).RoundTrip(req)
+	res, err := transform.Middleware(&dummyRoundTripper{}).RoundTrip(req)
 	require.NoError(t, err)
 
 	resBody, err := io.ReadAll(res.Body)
