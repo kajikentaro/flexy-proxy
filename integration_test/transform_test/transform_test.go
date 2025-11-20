@@ -48,41 +48,53 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestContent(t *testing.T) {
-	proxyUrl, err := url.Parse(PROXY_URL)
-	assert.NoError(t, err)
-
-	res, err := test_utils.Request(proxyUrl, "https://content.test/")
-	assert.NoError(t, err)
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	assert.NoError(t, err)
-	assert.Equal(t, "bar", string(body))
+type TestCase struct {
+	title        string
+	url          string
+	expectedBody string
 }
 
-func TestFile(t *testing.T) {
-	proxyUrl, err := url.Parse(PROXY_URL)
-	assert.NoError(t, err)
-
-	res, err := test_utils.Request(proxyUrl, "https://file.test/")
-	assert.NoError(t, err)
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	assert.NoError(t, err)
-	assert.Equal(t, "baz sample text", string(body))
+var testCases = []TestCase{
+	{
+		title:        "replace https content by sed command",
+		url:          "https://content.test/",
+		expectedBody: "bar",
+	},
+	{
+		title:        "replace https file content with pipe",
+		url:          "https://file.test/",
+		expectedBody: "baz sample text",
+	},
+	{
+		title:        "replace https reverse proxy response with wc command",
+		url:          "https://reverse-proxy.test/",
+		expectedBody: "11\n",
+	},
+	{
+		title:        "replace http content by sed command",
+		url:          "http://content.test/",
+		expectedBody: "bar",
+	},
+	{
+		title:        "replace http file content with pipe",
+		url:          "http://file.test/",
+		expectedBody: "baz sample text",
+	},
 }
 
-func TestRewrite(t *testing.T) {
-	proxyUrl, err := url.Parse(PROXY_URL)
-	assert.NoError(t, err)
+func TestTransform(t *testing.T) {
+	for _, tc := range testCases {
+		t.Run(tc.title, func(t *testing.T) {
+			proxyUrl, err := url.Parse(PROXY_URL)
+			assert.NoError(t, err)
 
-	res, err := test_utils.Request(proxyUrl, "https://url.test/")
-	assert.NoError(t, err)
-	defer res.Body.Close()
+			res, err := test_utils.Request(proxyUrl, tc.url)
+			assert.NoError(t, err)
+			defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	assert.NoError(t, err)
-	assert.Equal(t, "11\n", string(body))
+			body, err := io.ReadAll(res.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedBody, string(body))
+		})
+	}
 }
