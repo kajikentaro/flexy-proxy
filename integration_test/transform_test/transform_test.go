@@ -80,6 +80,11 @@ var testCases = []TestCase{
 		url:          "http://file.test/",
 		expectedBody: "baz sample text",
 	},
+	{
+		title:        "replace http reverse proxy response with wc command",
+		url:          "http://reverse-proxy.test/",
+		expectedBody: "11\n",
+	},
 }
 
 func TestTransform(t *testing.T) {
