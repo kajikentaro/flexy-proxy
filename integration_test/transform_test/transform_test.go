@@ -59,7 +59,7 @@ var testCases = []TestCase{
 	{
 		title:        "replace http reverse proxy response with wc command",
 		url:          "http://reverse-proxy.test/",
-		expectedBody: "hello world\n",
+		expectedBody: "11\n",
 	},
 }
 

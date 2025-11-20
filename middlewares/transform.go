@@ -37,7 +37,8 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 			return nil, err
 		}
 
-		res.Header.Set("Content-Length", "12")
+		res.ContentLength = -1
+		res.Header.Del("Content-Length")
 
 		// string "hello world" to io.ReadCloser
 		// b := io.NopCloser(strings.NewReader("hello world"))
