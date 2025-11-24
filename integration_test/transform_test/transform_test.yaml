@@ -1,4 +1,7 @@
 routes:
+  ##########
+  # HTTPS
+  ##########
   - url: "https://content.test/"
     # expected response is "bar"
     response:
@@ -12,10 +15,26 @@ routes:
       transform: |
         bash -c "sed -E 's/foo/bar/g' | sed -E 's/bar/baz/g'"
 
-  - url: "https://url.test/"
+  - url: "https://reverse-proxy.test/"
     response:
       rewrite: "http://localhost:8088/"
       transform: "bash ./wc.sh"
+
+  ##########
+  # HTTP
+  ##########
+  - url: "http://content.test/"
+    # expected response is "bar"
+    response:
+      content: "foo"
+      transform: "sed -E 's/foo/bar/g'"
+
+  - url: "http://file.test/"
+    # expected response is "baz sample text"
+    response:
+      file: "sample.txt"
+      transform: |
+        bash -c "sed -E 's/foo/bar/g' | sed -E 's/bar/baz/g'"
 
 default_route:
   deny_access: true
