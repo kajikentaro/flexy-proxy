@@ -12,6 +12,7 @@ import (
 	"github.com/kajikentaro/flexy-proxy/loggers"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var PROXY_PORT_NUMBER = 8087
@@ -91,7 +92,7 @@ func TestTransform(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
 			proxyUrl, err := url.Parse(PROXY_URL)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			res, err := test_utils.Request(proxyUrl, tc.url)
 			assert.NoError(t, err)

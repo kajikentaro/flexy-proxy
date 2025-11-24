@@ -91,6 +91,12 @@ func (t *Transform) Middleware(next http.RoundTripper) http.RoundTripper {
 			cmd.Wait()
 			pw.Close()
 		}()
+
+		// After the execution of the command, the size of the response body can change.
+		// Need to reset the Content-Length header.
+		res.ContentLength = -1
+		res.Header.Del("Content-Length")
+
 		return res, nil
 	})
 }
