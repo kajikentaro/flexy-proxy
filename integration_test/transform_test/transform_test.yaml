@@ -36,5 +36,10 @@ routes:
       transform: |
         bash -c "sed -E 's/foo/bar/g' | sed -E 's/bar/baz/g'"
 
+  - url: "http://reverse-proxy.test/"
+    response:
+      rewrite: "http://localhost:8088/"
+      transform: "bash ./wc.sh"
+
 default_route:
   deny_access: true
