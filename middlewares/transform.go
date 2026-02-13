@@ -25,9 +25,9 @@ type Transform struct {
 func isProbablyText(contentType string) bool {
 	if contentType == "" ||
 		strings.HasPrefix(contentType, "text/") ||
-		contentType == "application/json" ||
-		contentType == "application/xml" ||
-		contentType == "application/x-www-form-urlencoded" {
+		strings.HasPrefix(contentType, "application/json") ||
+		strings.HasPrefix(contentType, "application/xml") ||
+		strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {
 		return true
 	}
 	return false
