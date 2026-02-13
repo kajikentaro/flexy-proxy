@@ -23,7 +23,9 @@ An easy-to-start, YAML-based flexible proxy server for software development. Ret
 
 You can download the binary files from the [GitHub Releases](https://github.com/kajikentaro/flexy-proxy/releases) page. Choose the version that suits your operating system and architecture.
 
-### Install Commands
+### Install from Commands
+
+After executing appropriate commands for your system, you can run Flexy Proxy by typing `flexy`. For example, if you want to check the version, just type `flexy version`.
 
 #### macOS (both intel and Apple silicon)
 
