@@ -23,6 +23,38 @@ An easy-to-start, YAML-based flexible proxy server for software development. Ret
 
 You can download the binary files from the [GitHub Releases](https://github.com/kajikentaro/flexy-proxy/releases) page. Choose the version that suits your operating system and architecture.
 
+### Install from Commands
+
+After executing appropriate commands for your system, you can run Flexy Proxy by typing `flexy`. For example, if you want to check the version, just type `flexy version`.
+
+#### macOS (both intel and Apple silicon)
+
+```
+export LATEST_TAG=$(curl -s https://api.github.com/repos/kajikentaro/flexy-proxy/releases/latest | grep "tag_name" | sed -E 's/.*"tag_name": "(.*)".*/\1/')
+export ARCH=$(uname -m)
+curl -L "https://github.com/kajikentaro/flexy-proxy/releases/download/$LATEST_TAG/flexy-$LATEST_TAG-darwin-$ARCH" -o ./flexy
+chmod +x ./flexy
+sudo mv ./flexy /usr/local/bin/flexy
+```
+
+#### Linux (x86-64)
+
+```
+export LATEST_TAG=$(curl -s https://api.github.com/repos/kajikentaro/flexy-proxy/releases/latest | grep "tag_name" | sed -E 's/.*"tag_name": "(.*)".*/\1/')
+curl -L "https://github.com/kajikentaro/flexy-proxy/releases/download/$LATEST_TAG/flexy-$LATEST_TAG-linux-amd64" -o ./flexy
+chmod +x ./flexy
+sudo mv ./flexy /usr/local/bin/flexy
+```
+
+#### Linux (arm64)
+
+```
+export LATEST_TAG=$(curl -s https://api.github.com/repos/kajikentaro/flexy-proxy/releases/latest | grep "tag_name" | sed -E 's/.*"tag_name": "(.*)".*/\1/')
+curl -L "https://github.com/kajikentaro/flexy-proxy/releases/download/$LATEST_TAG/flexy-$LATEST_TAG-linux-arm64" -o ./flexy
+chmod +x ./flexy
+sudo mv ./flexy /usr/local/bin/flexy
+```
+
 ### Build from Source with Go
 
 If you prefer to build from source, you can install Flexy Proxy using `go install`.
