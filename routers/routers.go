@@ -116,7 +116,7 @@ func parse(config *models.RawConfig, workDir string) ([]ActiveRoute, error) {
 		}
 
 		if route.Response.Rewrite != nil {
-			h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite, config.InsecureCipherSuites)
+			h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite, config.InsecureCipherSuites, route.Request.Headers)
 			return h, nil
 		}
 
@@ -126,7 +126,7 @@ func parse(config *models.RawConfig, workDir string) ([]ActiveRoute, error) {
 		}
 
 		// by default, return this
-		h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite, config.InsecureCipherSuites)
+		h := NewReverseProxyTransport(route.proxyUrl, route.Response.Rewrite, config.InsecureCipherSuites, route.Request.Headers)
 		return h, nil
 	}
 
