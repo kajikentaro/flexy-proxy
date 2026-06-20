@@ -10,10 +10,9 @@ import (
 
 func NewReverseProxyTransport(proxyUrl *url.URL, urlReplacer UrlReplacer, insecureCipherSuites bool, reqHeaders map[string]string) http.RoundTripper {
 	return &ReverseProxyTransport{
-		proxyUrl:             proxyUrl,
-		urlReplacer:          urlReplacer,
-		insecureCipherSuites: insecureCipherSuites,
-		reqHeaders:           reqHeaders,
+		transport:   utils.GetTransport(insecureCipherSuites, proxyUrl),
+		urlReplacer: urlReplacer,
+		reqHeaders:  reqHeaders,
 	}
 }
 
@@ -22,10 +21,9 @@ type UrlReplacer interface {
 }
 
 type ReverseProxyTransport struct {
-	proxyUrl             *url.URL
-	urlReplacer          UrlReplacer
-	insecureCipherSuites bool
-	reqHeaders           map[string]string
+	transport   *http.Transport
+	urlReplacer UrlReplacer
+	reqHeaders  map[string]string
 }
 
 func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -60,8 +58,7 @@ func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, erro
 	})
 	rr.Host = getReplacedHost()
 
-	t := utils.GetTransport(c.insecureCipherSuites, c.proxyUrl)
-	res, err := t.RoundTrip(rr)
+	res, err := c.transport.RoundTrip(rr)
 	if err != nil {
 		return nil, err
 	}

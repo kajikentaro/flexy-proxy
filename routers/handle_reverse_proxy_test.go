@@ -2,9 +2,11 @@ package routers
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -73,4 +75,28 @@ func TestReverseProxyTransportHostPriority(t *testing.T) {
 		assert.Equal(t, mustParseURL(t, url).Host, gotHost)
 		assert.Equal(t, url, resp.Header.Get(HEADER_REWRITE_TO))
 	})
+}
+
+func TestReverseProxyTransportReusesConnections(t *testing.T) {
+	var connections atomic.Int32
+	target := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, "ok")
+	}))
+	target.Config.ConnState = func(_ net.Conn, state http.ConnState) {
+		if state == http.StateNew {
+			connections.Add(1)
+		}
+	}
+	target.Start()
+	defer target.Close()
+
+	roundTripper := NewReverseProxyTransport(nil, nil, false, nil)
+	for range 2 {
+		resp := sendRequest(t, roundTripper, target.URL)
+		_, err := io.Copy(io.Discard, resp.Body)
+		require.NoError(t, err)
+		require.NoError(t, resp.Body.Close())
+	}
+
+	assert.Equal(t, int32(1), connections.Load())
 }
