@@ -1,0 +1,21 @@
+package test_utils
+
+// In order to avoid port conflicts during parallel test executions,
+// we define reserved port numbers here.
+const (
+	PORT_NUM_ROUTE = iota + 8081
+	PORT_NUM_ROUTE_SERVER
+	PORT_NUM_PROXY_1
+	PORT_NUM_PROXY_2
+	PORT_NUM_REGEX_ROUTE_1
+	PORT_NUM_REGEX_ROUTE_2
+	PORT_NUM_PROXY_3
+	PORT_NUM_TRANSFORM
+	PORT_NUM_TRANSFORM_SERVER
+	PORT_NUM_CERTIFICATE
+	PORT_NUM_SSE
+	PORT_NUM_SSE_SERVER
+	PORT_NUM_ALWAYS_MITM
+	PORT_NUM_BENCHMARK
+	PORT_NUM_BENCHMARK_SERVER
+)

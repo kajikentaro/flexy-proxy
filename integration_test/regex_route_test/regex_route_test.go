@@ -14,11 +14,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var PROXY_PORT_NUMBER = 8085
+var PROXY_PORT_NUMBER = test_utils.PORT_NUM_REGEX_ROUTE_1
 var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
 var PROXY_URL = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER)
 
-var SAMPLE_SERVER_PORT_NUMBER = 8086
+var SAMPLE_SERVER_PORT_NUMBER = test_utils.PORT_NUM_REGEX_ROUTE_2
 var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
 
 func fatalln(a ...any) {
@@ -113,7 +113,7 @@ func TestReverseProxy(t *testing.T) {
 	proxyUrl, err := url.Parse(PROXY_URL)
 	assert.NoError(t, err)
 
-	res, err := test_utils.Request(proxyUrl, "http://localhost:8086/path/v1.2-win64.zip")
+	res, err := test_utils.Request(proxyUrl, fmt.Sprintf("http://localhost:%d/path/v1.2-win64.zip", test_utils.PORT_NUM_REGEX_ROUTE_2))
 	assert.NoError(t, err)
 	defer res.Body.Close()
 

@@ -14,14 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var PROXY_PORT_NUMBER_1 = 8083
+var PROXY_PORT_NUMBER_1 = test_utils.PORT_NUM_PROXY_1
 var PROXY_HTTP_ADDRESS_1 = fmt.Sprintf(":%d", PROXY_PORT_NUMBER_1)
 var PROXY_URL_1 = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER_1)
 
-var PROXY_PORT_NUMBER_2 = 8084
+var PROXY_PORT_NUMBER_2 = test_utils.PORT_NUM_PROXY_2
 var PROXY_HTTP_ADDRESS_2 = fmt.Sprintf(":%d", PROXY_PORT_NUMBER_2)
 
-var SAMPLE_SERVER_PORT_NUMBER = 8089
+var SAMPLE_SERVER_PORT_NUMBER = test_utils.PORT_NUM_PROXY_3
 var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
 
 func TestDefaultRoute(t *testing.T) {

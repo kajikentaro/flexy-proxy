@@ -16,11 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var PROXY_PORT_NUMBER = 8091
+var PROXY_PORT_NUMBER = test_utils.PORT_NUM_SSE
 var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
 var PROXY_URL, _ = url.Parse(fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER))
 
-var SAMPLE_SERVER_PORT_NUMBER = 8092
+var SAMPLE_SERVER_PORT_NUMBER = test_utils.PORT_NUM_SSE_SERVER
 var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
 var SAMPLE_SERVER_URL = fmt.Sprintf("http://localhost:%d", SAMPLE_SERVER_PORT_NUMBER)
 
@@ -61,7 +61,7 @@ func TestSSEWithoutProxy(t *testing.T) {
 
 // test SSE communication with proxy but without rewrite
 func TestSSEWithProxyWithoutRewrite(t *testing.T) {
-	res, err := test_utils.Request(PROXY_URL, "http://localhost:8092/sse")
+	res, err := test_utils.Request(PROXY_URL, fmt.Sprintf("http://localhost:%d/sse", test_utils.PORT_NUM_SSE_SERVER))
 	assert.NoError(t, err)
 	defer res.Body.Close()
 

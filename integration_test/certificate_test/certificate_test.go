@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var PROXY_PORT_NUMBER = 8090
+var PROXY_PORT_NUMBER = test_utils.PORT_NUM_CERTIFICATE
 var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
 var PROXY_URL, _ = url.Parse(fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER))
 
