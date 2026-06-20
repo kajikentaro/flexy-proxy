@@ -1,0 +1,19 @@
+log_level: "ERROR"
+
+routes:
+  - url: "http://example.com/contents"
+    response:
+      content: "benchmark content response"
+
+  - url: "http://example.com/rewrite"
+    response:
+      rewrite: "http://localhost:8095/"
+
+  - url: "http://example.com/file"
+    response:
+      file: "file.txt"
+
+  - url: "http://example.com/rewrite-transform"
+    response:
+      rewrite: "http://localhost:8095/"
+      transform: "bash ./wc.sh"
