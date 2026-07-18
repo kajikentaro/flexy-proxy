@@ -82,6 +82,78 @@ func TestMain(m *testing.M) {
 						},
 					},
 				},
+				{
+					Url:   "http://http.basic-rewrite.test",
+					Regex: true,
+					Response: models.RouteResponse{
+						Rewrite: &rewrite.Rewrite{
+							// Use localhost:[port] instead of [IP]:[localhost] in order to check Hostname
+							To: "http://localhost:" + serverUrl.Port(),
+						},
+					},
+				},
+				{
+					Url:   "https://https.basic-rewrite.test",
+					Regex: true,
+					Response: models.RouteResponse{
+						Rewrite: &rewrite.Rewrite{
+							// Use localhost:[port] instead of [IP]:[localhost] in order to check Hostname
+							To: "https://localhost:" + tlsServerUrl.Port(),
+						},
+					},
+				},
+				{
+					Url:   "http://http.overwrite-host.test",
+					Regex: true,
+					Response: models.RouteResponse{
+						Rewrite: &rewrite.Rewrite{
+							// Use localhost:[port] instead of [IP]:[localhost] in order to check Hostname
+							To: "http://localhost:" + serverUrl.Port(),
+						},
+					},
+					Request: models.RouteRequest{
+						Headers: map[string]string{"Host": "replaced-by-header"},
+					},
+				},
+				{
+					Url:   "https://https.overwrite-host.test",
+					Regex: true,
+					Response: models.RouteResponse{
+						Rewrite: &rewrite.Rewrite{
+							// Use localhost:[port] instead of [IP]:[localhost] in order to check Hostname
+							To: "https://localhost:" + tlsServerUrl.Port(),
+						},
+					},
+					Request: models.RouteRequest{
+						Headers: map[string]string{"Host": "replaced-by-header"},
+					},
+				},
+				{
+					Url:   "http://http.all.test",
+					Regex: true,
+					Response: models.RouteResponse{
+						Rewrite: &rewrite.Rewrite{
+							ConnectTo: serverUrl.Host,
+							To:        "http://specified-by-rewrite.test:" + serverUrl.Port(),
+						},
+					},
+					Request: models.RouteRequest{
+						Headers: map[string]string{"Host": "replaced-by-header"},
+					},
+				},
+				{
+					Url:   "https://https.all.test",
+					Regex: true,
+					Response: models.RouteResponse{
+						Rewrite: &rewrite.Rewrite{
+							ConnectTo: tlsServerUrl.Host,
+							To:        "https://specified-by-rewrite.test:" + tlsServerUrl.Port(),
+						},
+					},
+					Request: models.RouteRequest{
+						Headers: map[string]string{"Host": "replaced-by-header"},
+					},
+				},
 			},
 			AlwaysMitm: true,
 		}
@@ -120,7 +192,7 @@ func TestConnectToOptionWithHTTP(t *testing.T) {
 	require.NoError(t, err)
 	res.Body.Close()
 
-	assert.Equal(t, "[http-ok] host: http.connect-to.test", string(body))
+	assert.Equal(t, "[http-ok] host: http.connect-to.test", string(body), "hostname must be same as request")
 }
 
 func TestConnectToOptionWithHTTPS(t *testing.T) {
@@ -131,5 +203,77 @@ func TestConnectToOptionWithHTTPS(t *testing.T) {
 	require.NoError(t, err)
 	res.Body.Close()
 
-	assert.Equal(t, "[https-ok] host: https.connect-to.test, tls-sni: https.connect-to.test", string(body))
+	assert.Equal(t, "[https-ok] host: https.connect-to.test, tls-sni: https.connect-to.test", string(body), "hostname and tls-sni must be same as request")
+}
+
+func TestBasicRewriteWithHTTP(t *testing.T) {
+	res, err := test_utils.Request(PROXY_URL, "http://http.basic-rewrite.test")
+	require.NoError(t, err)
+
+	body, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	res.Body.Close()
+
+	assert.Regexp(t, "^\\[http-ok\\] host: localhost:[0-9]+$", string(body), "hostname must be same as \"to\"")
+}
+
+func TestBasicRewriteWithHTTPS(t *testing.T) {
+	res, err := test_utils.Request(PROXY_URL, "https://https.basic-rewrite.test")
+	require.NoError(t, err)
+
+	body, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	res.Body.Close()
+
+	assert.Regexp(t, "^\\[https-ok\\] host: localhost:[0-9]+, tls-sni: localhost$", string(body), "hostname and tls-sni must be same as \"to\"")
+}
+
+func TestOverwriteHostWithHTTP(t *testing.T) {
+	res, err := test_utils.Request(PROXY_URL, "http://http.overwrite-host.test")
+	require.NoError(t, err)
+
+	body, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	res.Body.Close()
+
+	assert.Equal(t, "[http-ok] host: replaced-by-header", string(body), "hostname must be replaced")
+}
+
+func TestOverwriteHostWithHTTPS(t *testing.T) {
+	res, err := test_utils.Request(PROXY_URL, "https://https.overwrite-host.test")
+	require.NoError(t, err)
+
+	body, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	res.Body.Close()
+
+	assert.Equal(t, "[https-ok] host: replaced-by-header, tls-sni: localhost", string(body), "only hostname must be replaced")
+}
+
+func TestAllAreSpecifiedWithHTTP(t *testing.T) {
+	res, err := test_utils.Request(PROXY_URL, "http://http.all.test")
+	require.NoError(t, err)
+
+	body, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	res.Body.Close()
+
+	assert.Equal(t, "[http-ok] host: replaced-by-header", string(body), "hostname must be replaced to header's one")
+}
+
+func TestAllAreSpecifiedWithHTTPS(t *testing.T) {
+	res, err := test_utils.Request(PROXY_URL, "https://https.all.test")
+	require.NoError(t, err)
+
+	body, err := io.ReadAll(res.Body)
+	require.NoError(t, err)
+	res.Body.Close()
+
+	// Reason
+	// 1. Flexy receive a request with "https://https.all.test".
+	// 2. Flexy replace the URL to "https://specified-by-rewrite.test:xxxx". This is SNI.
+	// 3. Flexy connect to the server "https://127.0.0.1:xxxx" which is specified on "connect_to".
+	// 4. Flexy send hostname "replaced-by-header" which is specified on "headers".
+	// As a result, we can get a response from https://127.0.0.1:xxxx but SNI and hostname are different.
+	assert.Equal(t, "[https-ok] host: replaced-by-header, tls-sni: specified-by-rewrite.test", string(body), "hostname must be replaced by header and tls-sni must be replaced by rewrite")
 }

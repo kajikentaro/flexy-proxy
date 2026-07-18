@@ -42,11 +42,13 @@ type RouteResponse struct {
 	Transform   string
 }
 
+type RouteRequest struct {
+	Headers map[string]string
+}
+
 type RouteConf struct {
 	Url      string
 	Regex    bool
 	Response RouteResponse
-	Request  struct {
-		Headers map[string]string
-	}
+	Request  RouteRequest
 }
