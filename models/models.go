@@ -31,20 +31,22 @@ type Router interface {
 	GetMatchedRoute(*url.URL) (route RouteConf, err error)
 }
 
+type RouteResponse struct {
+	Rewrite *rewrite.Rewrite
+	Content *string
+	File    *string
+
+	ContentType string `yaml:"content_type"`
+	Status      int
+	Headers     map[string]string
+	Transform   string
+}
+
 type RouteConf struct {
 	Url      string
 	Regex    bool
-	Response struct {
-		Rewrite *rewrite.Rewrite
-		Content *string
-		File    *string
-
-		ContentType string `yaml:"content_type"`
-		Status      int
-		Headers     map[string]string
-		Transform   string
-	}
-	Request struct {
+	Response RouteResponse
+	Request  struct {
 		Headers map[string]string
 	}
 }

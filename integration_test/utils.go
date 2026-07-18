@@ -69,7 +69,7 @@ func StartSampleHttpServer(ctx context.Context, addr string, logger *loggers.Log
 }
 
 func StartProxyServer(ctx context.Context, proxyAddr string, configPath string) error {
-	proxyConfig, err := configs.ParseConfig(configPath)
+	proxyConfig, err := configs.ParseConfigFile(configPath)
 	if err != nil {
 		return err
 	}

@@ -26,7 +26,7 @@ func getVersion() string {
 }
 
 func startProxy(customConfigPath string, portNum int) {
-	proxyConfig, err := configs.ParseConfig(customConfigPath)
+	proxyConfig, err := configs.ParseConfigFile(customConfigPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
@@ -39,7 +39,7 @@ func startProxy(customConfigPath string, portNum int) {
 }
 
 func testRoute(customConfigPath string, testUrl string) error {
-	proxyConfig, err := configs.ParseConfig(customConfigPath)
+	proxyConfig, err := configs.ParseConfigFile(customConfigPath)
 	if err != nil {
 		return err
 	}
