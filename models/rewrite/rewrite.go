@@ -65,7 +65,8 @@ type Rewrite struct {
 	// Proxy setting for this route.
 	// If this is nil, default proxy is used.
 	// If this is "", no proxy is used.
-	Proxy *string
+	Proxy     *string
+	ConnectTo string `yaml:"connect_to"`
 }
 
 func (u *Rewrite) Replace(inputUrl *url.URL) (*url.URL, error) {
@@ -119,10 +120,11 @@ func (e *Rewrite) UnmarshalYAML(value *yaml.Node) error {
 
 	// In order to avoid infinite loop, we need to declare temporary struct which is same as Rewrite
 	var tmp struct {
-		From  string
-		To    string
-		Regex bool
-		Proxy *string
+		From      string
+		To        string
+		Regex     bool
+		Proxy     *string
+		ConnectTo string `yaml:"connect_to"`
 	}
 	err := value.Decode(&tmp)
 	if err == nil {
@@ -130,6 +132,7 @@ func (e *Rewrite) UnmarshalYAML(value *yaml.Node) error {
 		e.To = tmp.To
 		e.Regex = tmp.Regex
 		e.Proxy = tmp.Proxy
+		e.ConnectTo = tmp.ConnectTo
 		return nil
 	}
 

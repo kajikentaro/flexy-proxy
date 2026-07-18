@@ -2,6 +2,7 @@ package routers
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -93,6 +94,19 @@ func parse(config *models.RawConfig, workDir string) ([]ActiveRoute, error) {
 		if r.Response.Rewrite == nil {
 			rr.proxyUrl = defaultProxy
 		} else {
+			connectTo := r.Response.Rewrite.ConnectTo
+			// Validate connectTo
+			if connectTo != "" {
+				if _, _, err := net.SplitHostPort(connectTo); err != nil {
+					return nil, models.NewValidationError(
+						pos,
+						"`connect_to` must be \"[host]:[port_num]\"",
+						connectTo,
+					)
+				}
+			}
+
+			// Configure proxy
 			if r.Response.Rewrite.Proxy == nil {
 				rr.proxyUrl = defaultProxy
 			} else if *r.Response.Rewrite.Proxy == "" {

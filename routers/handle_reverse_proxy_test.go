@@ -5,21 +5,13 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"sync/atomic"
 	"testing"
 
+	"github.com/kajikentaro/flexy-proxy/models/rewrite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-type mockUrlReplacer struct {
-	toUrl string
-}
-
-func (m *mockUrlReplacer) Replace(u *url.URL) (*url.URL, error) {
-	return url.Parse(m.toUrl)
-}
 
 func sendRequest(t *testing.T, roundTripper http.RoundTripper, url string) *http.Response {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -39,7 +31,7 @@ func TestReverseProxyTransportHostPriority(t *testing.T) {
 		_, _ = io.WriteString(w, "ok")
 	}))
 	defer target.Close()
-	rewriter := &mockUrlReplacer{toUrl: target.URL}
+	rewriter := &rewrite.Rewrite{To: target.URL}
 
 	t.Run("configured Host header has highest priority", func(t *testing.T) {
 		roundTripper := NewReverseProxyTransport(nil, rewriter, false, map[string]string{

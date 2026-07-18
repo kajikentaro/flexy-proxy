@@ -70,11 +70,14 @@ rewrite:
 
 func TestMarshalYaml(t *testing.T) {
 	t.Run("advanced options", func(t *testing.T) {
+		proxy := "https://proxy.test"
 		in := DummyStruct{
 			Rewrite: &Rewrite{
-				From:  "original",
-				To:    "replaced",
-				Regex: true,
+				From:      "original",
+				To:        "replaced",
+				Regex:     true,
+				ConnectTo: "192.168.11.1:80",
+				Proxy:     &proxy,
 			},
 		}
 		marshaled, err := yaml.Marshal(in)
@@ -84,7 +87,8 @@ func TestMarshalYaml(t *testing.T) {
     from: original
     to: replaced
     regex: true
-    proxy: null
+    proxy: https://proxy.test
+    connect_to: 192.168.11.1:80
 `
 		assert.Equal(t, expected, string(marshaled))
 	})
@@ -101,6 +105,7 @@ func TestMarshalYaml(t *testing.T) {
     to: ""
     regex: false
     proxy: null
+    connect_to: ""
 `
 		assert.Equal(t, expected, string(marshaled))
 	})

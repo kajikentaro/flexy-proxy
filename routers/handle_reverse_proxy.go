@@ -5,25 +5,26 @@ import (
 	"net/textproto"
 	"net/url"
 
+	"github.com/kajikentaro/flexy-proxy/models/rewrite"
 	"github.com/kajikentaro/flexy-proxy/utils"
 )
 
-func NewReverseProxyTransport(proxyUrl *url.URL, urlReplacer UrlReplacer, insecureCipherSuites bool, reqHeaders map[string]string) http.RoundTripper {
+func NewReverseProxyTransport(proxyUrl *url.URL, rewrite *rewrite.Rewrite, insecureCipherSuites bool, reqHeaders map[string]string) http.RoundTripper {
+	connectTo := ""
+	if !utils.IsNil(rewrite) {
+		connectTo = rewrite.ConnectTo
+	}
 	return &ReverseProxyTransport{
-		transport:   utils.GetTransport(insecureCipherSuites, proxyUrl),
-		urlReplacer: urlReplacer,
-		reqHeaders:  reqHeaders,
+		transport:  utils.GetTransport(insecureCipherSuites, proxyUrl, connectTo),
+		rewrite:    rewrite,
+		reqHeaders: reqHeaders,
 	}
 }
 
-type UrlReplacer interface {
-	Replace(*url.URL) (*url.URL, error)
-}
-
 type ReverseProxyTransport struct {
-	transport   *http.Transport
-	urlReplacer UrlReplacer
-	reqHeaders  map[string]string
+	transport  *http.Transport
+	rewrite    *rewrite.Rewrite
+	reqHeaders map[string]string
 }
 
 func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -31,8 +32,8 @@ func (c *ReverseProxyTransport) RoundTrip(r *http.Request) (*http.Response, erro
 	var replacedUrlHost string
 
 	// NOTE: "nil" with type info (*rewrite.Rewrite) is NOT nil. Can't use c.urlReplacer != nil here.
-	if !utils.IsNil(c.urlReplacer) {
-		if replacedUrl, err := c.urlReplacer.Replace(r.URL); err != nil {
+	if !utils.IsNil(c.rewrite) {
+		if replacedUrl, err := c.rewrite.Replace(r.URL); err != nil {
 			return nil, err
 		} else {
 			rr.URL = replacedUrl
