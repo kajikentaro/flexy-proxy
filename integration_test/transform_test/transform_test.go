@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var PROXY_PORT_NUMBER = 8087
+var PROXY_PORT_NUMBER = test_utils.PORT_NUM_TRANSFORM
 var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
 var PROXY_URL = fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER)
 
-var SAMPLE_SERVER_PORT_NUMBER = 8088
+var SAMPLE_SERVER_PORT_NUMBER = test_utils.PORT_NUM_TRANSFORM_SERVER
 var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
 
 func fatalln(a ...any) {

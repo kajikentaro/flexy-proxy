@@ -19,13 +19,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var PROXY_PORT_NUMBER = 8081
+var PROXY_PORT_NUMBER = test_utils.PORT_NUM_ROUTE
 var PROXY_HTTP_ADDRESS = fmt.Sprintf(":%d", PROXY_PORT_NUMBER)
 var PROXY_URL, _ = url.Parse(
 	fmt.Sprintf("http://localhost:%d", PROXY_PORT_NUMBER),
 )
 
-var SAMPLE_SERVER_PORT_NUMBER = 8082
+var SAMPLE_SERVER_PORT_NUMBER = test_utils.PORT_NUM_ROUTE_SERVER
 var SAMPLE_SERVER_HTTP_ADDRESS = fmt.Sprintf(":%d", SAMPLE_SERVER_PORT_NUMBER)
 
 func TestRequestOnConfigUrl(t *testing.T) {

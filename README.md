@@ -17,6 +17,39 @@ An easy-to-start, YAML-based flexible proxy server for software development. Ret
   - Connect to another proxy.
   - Deny access.
 
+**Request Flow**
+
+```mermaid
+flowchart LR
+    Client["Client"] -->|"HTTP / HTTPS request"| Proxy["Flexy Proxy"]
+    Config["YAML configuration"] -->|"routes, certificates,<br/>default route"| Proxy
+
+    Proxy --> Router{"Route matched?"}
+
+    Router -->|"Yes"| Handler{"Response handler"}
+    Handler --> Content["Content"]
+    Handler --> File["File"]
+    Handler --> Rewrite["Rewrite"]
+    Rewrite <-->|"HTTP / HTTPS"| Upstream["Upstream server"]
+
+    Content --> Transform{"Transform configured?"}
+    File --> Transform
+    Rewrite --> Transform
+    Transform -->|"Yes"| Command["External command"]
+    Transform -->|"No"| Response["Response"]
+    Command --> Response
+
+    Router -->|"No"| Default{"Default route"}
+    Default --> Internet["Connect to internet"]
+    Default --> ParentProxy["Connect through<br/>another proxy"]
+    Default --> Deny["Deny access"]
+
+    Internet --> Response
+    ParentProxy --> Response
+    Deny --> Response
+    Response --> Client
+```
+
 ## Installation
 
 ### Binary Download
@@ -111,7 +144,6 @@ routes:
       rewrite:
         to: "https://example.com"
 ```
-
 
 ## Certificates
 
