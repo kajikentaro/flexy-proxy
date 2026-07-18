@@ -30,7 +30,7 @@ func TestCalcHttpsHostList(t *testing.T) {
 			},
 		}
 		actual, err := gethttps.GetHttpsHostList(routes)
-		assert.ErrorContains(t, err, "Regular expressions are not allowed in the hostname when `always_mitm` is false.")
+		assert.ErrorContains(t, err, "regular expressions are not allowed in the hostname when `always_mitm` is false")
 		assert.Nil(t, actual)
 	})
 }

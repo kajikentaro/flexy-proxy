@@ -68,7 +68,7 @@ func parse(config *models.RawConfig, workDir string) ([]ActiveRoute, error) {
 		if r.Regex {
 			regexUrl, err := regexp.Compile("^" + r.Url)
 			if err != nil {
-				return nil, models.NewValidationError(pos, "Failed to compile regex: %s", r.Url)
+				return nil, models.NewValidationError(pos, "failed to compile regex: %s", r.Url)
 			}
 			rr.regexUrl = regexUrl
 		} else {

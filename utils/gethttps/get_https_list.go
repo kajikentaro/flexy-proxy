@@ -42,16 +42,16 @@ func getHostname(inR models.RouteConf, pos string) (string, error) {
 	// `originStr` would be 'https://foo\.example\.com'
 	originStr := regOrigin.FindString(inR.Url)
 	if isRegexp(originStr) {
-		return "", models.NewValidationError(pos, "Regular expressions are not allowed in the hostname when `always_mitm` is false.", originStr)
+		return "", models.NewValidationError(pos, "regular expressions are not allowed in the hostname when `always_mitm` is false", originStr)
 	}
 	// `originPlained` would be 'https://foo.example.com'
 	originPlained, err := decodeRegexpEscape(originStr)
 	if err != nil {
-		return "", models.NewValidationError(pos, fmt.Sprintf("Failed to decode regex: %s", err), originPlained)
+		return "", models.NewValidationError(pos, fmt.Sprintf("failed to decode regex: %s", err), originPlained)
 	}
 	url, err := url.Parse(originPlained)
 	if err != nil {
-		return "", models.NewValidationError(pos, fmt.Sprintf("Failed to parse decoded regex: %s", err), originPlained)
+		return "", models.NewValidationError(pos, fmt.Sprintf("failed to parse decoded regex: %s", err), originPlained)
 	}
 	return url.Host, nil
 }
