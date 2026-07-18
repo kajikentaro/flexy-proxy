@@ -69,23 +69,12 @@ rewrite:
 }
 
 func TestMarshalYaml(t *testing.T) {
-	t.Run("single string", func(t *testing.T) {
-		in := DummyStruct{
-			Rewrite: &Rewrite{singleUrl: "original"},
-		}
-		marshaled, err := yaml.Marshal(in)
-		assert.NoError(t, err)
-		expected := "rewrite: original\n"
-		assert.Equal(t, expected, string(marshaled))
-	})
 	t.Run("advanced options", func(t *testing.T) {
 		in := DummyStruct{
 			Rewrite: &Rewrite{
-				advancedOptions: advancedOptions{
-					From:  "original",
-					To:    "replaced",
-					Regex: true,
-				},
+				From:  "original",
+				To:    "replaced",
+				Regex: true,
 			},
 		}
 		marshaled, err := yaml.Marshal(in)
@@ -127,7 +116,7 @@ func TestReplaceEmpty(t *testing.T) {
 	})
 
 	t.Run("'to' is empty", func(t *testing.T) {
-		r := &Rewrite{advancedOptions: advancedOptions{From: "original"}}
+		r := &Rewrite{From: "original"}
 		input, _ := url.ParseRequestURI("http://original.url")
 		actual, err := r.Replace(input)
 		assert.NoError(t, err)
@@ -135,7 +124,7 @@ func TestReplaceEmpty(t *testing.T) {
 	})
 
 	t.Run("'from' is empty", func(t *testing.T) {
-		r := &Rewrite{advancedOptions: advancedOptions{To: "http://target.url"}}
+		r := &Rewrite{To: "http://target.url"}
 		input, _ := url.ParseRequestURI("http://original.url")
 		actual, err := r.Replace(input)
 		assert.NoError(t, err)
