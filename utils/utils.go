@@ -1,13 +1,16 @@
 package utils
 
 import (
+	"context"
 	"crypto/tls"
+	"net"
 	"net/http"
 	"net/url"
 	"reflect"
+	"time"
 )
 
-func GetTransport(insecureCipherSuites bool, proxyUrl *url.URL) *http.Transport {
+func GetTransport(insecureCipherSuites bool, proxyUrl *url.URL, connectTo string) *http.Transport {
 	// if cipherSuites is nil, Go uses a default list
 	var cipherSuites []uint16
 
@@ -25,6 +28,18 @@ func GetTransport(insecureCipherSuites bool, proxyUrl *url.URL) *http.Transport 
 		InsecureSkipVerify: true,
 		CipherSuites:       cipherSuites,
 	}
+
+	if connectTo != "" {
+		// same settings as http.DefaultTransport
+		dialer := &net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}
+		t.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return dialer.DialContext(ctx, network, connectTo)
+		}
+	}
+
 	if proxyUrl != nil {
 		t.Proxy = func(req *http.Request) (*url.URL, error) {
 			return proxyUrl, nil

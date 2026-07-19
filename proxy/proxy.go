@@ -145,6 +145,7 @@ func (p *Proxy) getProxyHttpServer(config *Config) *goproxy.ProxyHttpServer {
 	proxy.Tr = utils.GetTransport(
 		config.InsecureCipherSuites,
 		p.defaultRoute.Proxy, // proxy which is used when "AlwaysMitm" hits
+		"",
 	)
 	if p.defaultRoute.Proxy != nil {
 		// proxy which is used when "AlwaysMitm" doesn't hits

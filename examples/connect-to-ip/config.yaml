@@ -1,0 +1,5 @@
+routes:
+  - url: "https://one.one.one.one"
+    response:
+      rewrite:
+        connect_to: "1.1.1.1:443"

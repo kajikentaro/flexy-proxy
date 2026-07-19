@@ -11,6 +11,6 @@ func NewValidationError(position string, message string, actual string) error {
 	return fmt.Errorf(
 		"%w: %s",
 		ErrValidation,
-		fmt.Sprintf("%s Found: \"%s\" on %s", message, actual, position),
+		fmt.Sprintf("%s: got \"%s\" on %s", message, actual, position),
 	)
 }

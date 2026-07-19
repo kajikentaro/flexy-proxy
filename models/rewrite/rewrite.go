@@ -12,7 +12,7 @@ import (
 /*
 There are 3 patters of input.
 
-#1:
+#1-A:
 
 	input:
 	```
@@ -21,6 +21,17 @@ There are 3 patters of input.
 
 	behavior:
 	Simply Replace the input URL to "single string"
+
+#1-B:
+
+	input:
+	```
+	key:
+		to: "b"
+	```
+
+	behavior:
+	Simple Replace the input URL to "b". (same as #1)
 
 #2:
 
@@ -48,33 +59,24 @@ There are 3 patters of input.
 	Replace the input URL by using regex patterns
 */
 type Rewrite struct {
-	singleUrl string
-	advancedOptions
-}
-
-type advancedOptions struct {
 	From  string
 	To    string
 	Regex bool
-	Proxy *string
+	// Proxy setting for this route.
+	// If this is nil, default proxy is used.
+	// If this is "", no proxy is used.
+	Proxy     *string
+	ConnectTo string `yaml:"connect_to"`
 }
 
 func (u *Rewrite) Replace(inputUrl *url.URL) (*url.URL, error) {
-	// pattern #1
-	if u.singleUrl != "" {
-		newUrl, err := url.ParseRequestURI(u.singleUrl)
-		if err != nil {
-			return nil, newUrlRewriteError(fmt.Sprintf("invalid url in 'rewrite': %s", u.singleUrl), err)
-		}
-		return newUrl, nil
-	}
-
-	// no replacement
+	// No replacement
 	if u.To == "" {
 		return inputUrl, nil
 	}
 
-	// use "To" without replacing
+	// pattern #1-A or #1-B
+	// Use "To" without replacing
 	if u.From == "" {
 		newUrl, err := url.ParseRequestURI(u.To)
 		if err != nil {
@@ -112,23 +114,27 @@ func (u *Rewrite) Replace(inputUrl *url.URL) (*url.URL, error) {
 func (e *Rewrite) UnmarshalYAML(value *yaml.Node) error {
 	var str string
 	if err := value.Decode(&str); err == nil {
-		e.singleUrl = str
+		e.To = str
 		return nil
 	}
 
-	var urlParts advancedOptions
-	err := value.Decode(&urlParts)
+	// In order to avoid infinite loop, we need to declare temporary struct which is same as Rewrite
+	var tmp struct {
+		From      string
+		To        string
+		Regex     bool
+		Proxy     *string
+		ConnectTo string `yaml:"connect_to"`
+	}
+	err := value.Decode(&tmp)
 	if err == nil {
-		e.advancedOptions = urlParts
+		e.From = tmp.From
+		e.To = tmp.To
+		e.Regex = tmp.Regex
+		e.Proxy = tmp.Proxy
+		e.ConnectTo = tmp.ConnectTo
 		return nil
 	}
 
 	return err
-}
-
-func (e *Rewrite) MarshalYAML() (interface{}, error) {
-	if e.singleUrl != "" {
-		return e.singleUrl, nil
-	}
-	return e.advancedOptions, nil
 }

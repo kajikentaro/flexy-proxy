@@ -116,6 +116,12 @@
                         "default": "",
                         "description": "The URL of the proxy to use for this route. If not specified, 'default_route.proxy' will be used. To disable the proxy, specify an empty string.",
                         "examples": ["http://proxy.example.com"]
+                      },
+                      "connect_to": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Overrides the request's network connection target, similarly to curl's --connect-to option. Specify only the destination in host format, such as 192.168.11.2:80. This changes only where the TCP connection is established.",
+                        "examples": ["192.168.11.2:80"]
                       }
                     }
                   },

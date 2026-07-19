@@ -19,7 +19,7 @@ import (
 
 // https://github.com/kajikentaro/flexy-proxy/issues/7
 func TestAlwaysMitmWithRegex(t *testing.T) {
-	proxyConfig, err := parseRawConfig(
+	proxyConfig, err := ParseRawConfig(
 		&models.RawConfig{
 			Routes:     []models.RouteConf{{Url: "https://example\\.test", Regex: true}, {Url: "https://foo.test"}},
 			AlwaysMitm: true,
@@ -64,7 +64,7 @@ func TestLoadCertificateWithRelativePath(t *testing.T) {
 		Certificate:    certName,
 		CertificateKey: certKeyName,
 	}
-	proxyConfig, err := parseRawConfig(&rawConfig, tmpDir /* directory which has the cert files */)
+	proxyConfig, err := ParseRawConfig(&rawConfig, tmpDir /* directory which has the cert files */)
 	require.NoError(t, err)
 	assert.NotNil(t, proxyConfig.Certificate)
 }
@@ -82,7 +82,7 @@ func TestLoadCertificateWithAbsolutePath(t *testing.T) {
 		Certificate:    certPath,
 		CertificateKey: certKeyPath,
 	}
-	proxyConfig, err := parseRawConfig(&rawConfig, "." /* directory which doesn't have files */)
+	proxyConfig, err := ParseRawConfig(&rawConfig, "." /* directory which doesn't have files */)
 	require.NoError(t, err)
 	assert.NotNil(t, proxyConfig.Certificate)
 }

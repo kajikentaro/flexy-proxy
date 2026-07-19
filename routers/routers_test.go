@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kajikentaro/flexy-proxy/models"
+	"github.com/kajikentaro/flexy-proxy/models/rewrite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,6 +48,20 @@ func TestParse(t *testing.T) {
 			}}
 		actual, err := parse(config, ".")
 		assert.ErrorContains(t, err, "URL must have a host")
+		assert.Nil(t, actual)
+	})
+
+	t.Run("Invalid connect_to", func(t *testing.T) {
+		config := &models.RawConfig{
+			Routes: []models.RouteConf{
+				{Url: "http://example.com"},
+			},
+		}
+		config.Routes[0].Response.Rewrite = &rewrite.Rewrite{
+			ConnectTo: "http://invalid.test:80",
+		}
+		actual, err := parse(config, ".")
+		assert.ErrorContains(t, err, "`connect_to` must be \"[host]:[port_num]\"")
 		assert.Nil(t, actual)
 	})
 

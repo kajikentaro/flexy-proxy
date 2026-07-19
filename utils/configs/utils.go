@@ -20,14 +20,14 @@ import (
 
 var DEFAULT_CONFIG_PATH = "config.yaml"
 
-func ParseConfig(configPath string) (*proxy.Config, error) {
+func ParseConfigFile(configPath string) (*proxy.Config, error) {
 	rawConfig, err := ReadConfigYaml(configPath)
 	if err != nil {
 		return nil, err
 	}
 
 	configFileDir := filepath.Dir(configPath)
-	proxyConfig, err := parseRawConfig(rawConfig, configFileDir)
+	proxyConfig, err := ParseRawConfig(rawConfig, configFileDir)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func loadCertificate(certPath string, certKeyPath string, baseDir string) (*tls.
 	return &cert, nil
 }
 
-func parseRawConfig(rawConfig *models.RawConfig, configFileDir string) (*proxy.Config, error) {
+func ParseRawConfig(rawConfig *models.RawConfig, configFileDir string) (*proxy.Config, error) {
 	router, err := routers.NewRouter(rawConfig, configFileDir)
 	if err != nil {
 		return nil, err
