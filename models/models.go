@@ -19,6 +19,7 @@ type RawConfig struct {
 	Certificate          string          `yaml:"certificate"`
 	CertificateKey       string          `yaml:"certificate_key"`
 	InsecureCipherSuites bool            `yaml:"insecure_cipher_suites"`
+	RequiredVersion      string          `yaml:"required_version"`
 }
 
 type RawDefaultRoute struct {

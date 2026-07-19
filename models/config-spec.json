@@ -5,6 +5,12 @@
   "title": "Flexy Proxy Config Specification",
   "additionalProperties": false,
   "properties": {
+    "required_version": {
+      "type": "string",
+      "default": "",
+      "description": "Minimum required version of Flexy Proxy. If the installed version of Flexy is older than the specified version, Flexy displays a message prompting the user to update it.",
+      "examples": ["v0.2.4"]
+    },
     "default_route": {
       "type": "object",
       "default": {},

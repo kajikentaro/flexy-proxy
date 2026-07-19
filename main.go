@@ -10,20 +10,10 @@ import (
 	"github.com/kajikentaro/flexy-proxy/models"
 	"github.com/kajikentaro/flexy-proxy/proxy"
 	"github.com/kajikentaro/flexy-proxy/utils/configs"
+	"github.com/kajikentaro/flexy-proxy/utils/version"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
-
-// this will be specified like:
-// go build -ldflags "-X 'main.version=1.0.0'"
-var version string
-
-func getVersion() string {
-	if version == "" {
-		return "unknown"
-	}
-	return version
-}
 
 func startProxy(customConfigPath string, portNum int) {
 	proxyConfig, err := configs.ParseConfigFile(customConfigPath)
@@ -86,7 +76,7 @@ func main() {
 		Use:   "version",
 		Short: "Show version",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(getVersion())
+			fmt.Println(version.GetVersion())
 		},
 	}
 
