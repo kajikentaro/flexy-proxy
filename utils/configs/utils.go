@@ -13,6 +13,7 @@ import (
 	"github.com/kajikentaro/flexy-proxy/proxy"
 	"github.com/kajikentaro/flexy-proxy/routers"
 	"github.com/kajikentaro/flexy-proxy/utils/gethttps"
+	"github.com/kajikentaro/flexy-proxy/utils/version"
 	"github.com/xeipuuv/gojsonschema"
 
 	"gopkg.in/yaml.v3"
@@ -23,6 +24,10 @@ var DEFAULT_CONFIG_PATH = "config.yaml"
 func ParseConfigFile(configPath string) (*proxy.Config, error) {
 	rawConfig, err := ReadConfigYaml(configPath)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := version.VerifyVersion(rawConfig.RequiredVersion, version.GetVersion()); err != nil {
 		return nil, err
 	}
 
