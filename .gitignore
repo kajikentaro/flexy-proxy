@@ -6,3 +6,6 @@ server.key
 server.csr
 server.crt
 flexy-proxy
+
+*.test
+*.out
