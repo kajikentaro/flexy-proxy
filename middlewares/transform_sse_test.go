@@ -40,6 +40,7 @@ func (d dummyStream) RoundTrip(_ *http.Request) (*http.Response, error) {
 }
 
 func TestDummyStreamItself(t *testing.T) {
+	t.Parallel()
 	roundTripper := dummyStream{}
 	res, err := roundTripper.RoundTrip(nil)
 	require.NoError(t, err)
@@ -49,6 +50,7 @@ func TestDummyStreamItself(t *testing.T) {
 }
 
 func TestTransformStream(t *testing.T) {
+	t.Parallel()
 	command := []string{"sed", "-u", "-e", "s/data/DATA/g"}
 	transform := middlewares.NewTransform(&command, ".")
 
@@ -61,6 +63,7 @@ func TestTransformStream(t *testing.T) {
 }
 
 func TestTransformStreamStdErr(t *testing.T) {
+	t.Parallel()
 	command := []string{"bash", "-c", "sed -u -e 's/data/DATA/g' >&2"}
 	transform := middlewares.NewTransform(&command, ".")
 

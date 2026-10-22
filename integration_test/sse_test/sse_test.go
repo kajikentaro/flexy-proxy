@@ -52,6 +52,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestSSEWithoutProxy(t *testing.T) {
+	t.Parallel()
 	res, err := http.Get(SAMPLE_SERVER_URL + "/sse")
 	assert.NoError(t, err)
 	defer res.Body.Close()
@@ -61,6 +62,7 @@ func TestSSEWithoutProxy(t *testing.T) {
 
 // test SSE communication with proxy but without rewrite
 func TestSSEWithProxyWithoutRewrite(t *testing.T) {
+	t.Parallel()
 	res, err := test_utils.Request(PROXY_URL, fmt.Sprintf("http://localhost:%d/sse", test_utils.PORT_NUM_SSE_SERVER))
 	assert.NoError(t, err)
 	defer res.Body.Close()
@@ -70,6 +72,7 @@ func TestSSEWithProxyWithoutRewrite(t *testing.T) {
 
 // test SSE communication with proxy and with rewrite
 func TestSSEWithProxy(t *testing.T) {
+	t.Parallel()
 	res, err := test_utils.Request(PROXY_URL, "http://sample-sse.test/sse")
 	assert.NoError(t, err)
 	defer res.Body.Close()
@@ -79,6 +82,7 @@ func TestSSEWithProxy(t *testing.T) {
 
 // test SSE communication with proxy and with rewrite and transform commands
 func TestSSEWithTransform(t *testing.T) {
+	t.Parallel()
 	res, err := test_utils.Request(PROXY_URL, "http://sample-sse.test/sse-with-transform")
 	require.NoError(t, err)
 	defer res.Body.Close()
